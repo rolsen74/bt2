@@ -20,6 +20,29 @@
 
 // --
 
+void
+BT2_AccountCompletedPackets( struct BTL2CAPLink *link, const uint8_t *event, uint32_t length )
+{
+	uint32_t offset;
+	uint32_t credits;
+
+	if ( ( length < 3 ) || ( event[0] != HCI_EVENT_COMPLETED_PACKETS ) || ( length != 3 + 4U * event[2] ) )
+	{
+		return;
+	}
+
+	for( offset = 3; offset < length; offset += 4 )
+	{
+		if ( BT_ReadLE16( & event[offset] ) == link->Handle )
+		{
+			credits = link->Credits + BT_ReadLE16( & event[offset + 2] );
+			link->Credits = credits > link->CreditLimit ? link->CreditLimit : credits;
+		}
+	}
+}
+
+// --
+
 static enum BTHCIResult
 WaitForCredit( struct BTL2CAPLink *link, struct BTHCIError *error )
 {
@@ -28,8 +51,6 @@ WaitForCredit( struct BTL2CAPLink *link, struct BTHCIError *error )
 	uint8_t event[HCI_EVENT_MAX];
 	uint32_t reads;
 	uint32_t length;
-	uint32_t offset;
-	uint32_t credits;
 
 	reads = 64;
 
@@ -62,20 +83,7 @@ WaitForCredit( struct BTL2CAPLink *link, struct BTHCIError *error )
 			}
 		}
 
-		if ( ( event[0] != HCI_EVENT_COMPLETED_PACKETS ) || ( length < 3 ) ||
-			( length != 3 + 4U * event[2] ) )
-		{
-			continue;
-		}
-
-		for( offset = 3; offset < length; offset += 4 )
-		{
-			if ( BT_ReadLE16( & event[offset] ) == link->Handle )
-			{
-				credits = link->Credits + BT_ReadLE16( & event[offset + 2] );
-				link->Credits = credits > link->CreditLimit ? link->CreditLimit : credits;
-			}
-		}
+		BT2_AccountCompletedPackets( link, event, length );
 
 		if ( link->Credits )
 		{

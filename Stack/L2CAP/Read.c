@@ -78,7 +78,8 @@ ReadACLFrame( const struct BTACLTransport *transport, uint8_t *packet, uint32_t 
 // --
 
 enum BTHCIResult
-BT2_ReadL2CAP( struct BTL2CAPLink *link, struct BTL2CAPPacket *pdu, uint32_t *reads, struct BTHCIError *error )
+BT2_ReadL2CAPWithTimeouts( struct BTL2CAPLink *link, struct BTL2CAPPacket *pdu,
+	uint32_t *reads, uint32_t retryLimit, struct BTHCIError *error )
 {
 	enum BTHCIResult result;
 
@@ -109,7 +110,7 @@ BT2_ReadL2CAP( struct BTL2CAPLink *link, struct BTL2CAPPacket *pdu, uint32_t *re
 		if ( result != BT_HCI_OK )
 		{
 			if ( ( result == BT_ACL_READ_ERROR ) && ( error->TransportError == BT_HCI_TRANSPORT_TIMEOUT ) &&
-				( ! length ) && ( ++timeouts < 6 + link->ExtraReadTimeouts ) )
+				( ! length ) && ( ++timeouts < retryLimit ) )
 			{
 				continue;
 			}
@@ -170,6 +171,14 @@ BT2_ReadL2CAP( struct BTL2CAPLink *link, struct BTL2CAPPacket *pdu, uint32_t *re
 	}
 
 	return ( BT_HCI_INVALID_REPLY );
+}
+
+// --
+
+enum BTHCIResult
+BT2_ReadL2CAP( struct BTL2CAPLink *link, struct BTL2CAPPacket *pdu, uint32_t *reads, struct BTHCIError *error )
+{
+	return ( BT2_ReadL2CAPWithTimeouts( link, pdu, reads, 6 + link->ExtraReadTimeouts, error ) );
 }
 
 // --

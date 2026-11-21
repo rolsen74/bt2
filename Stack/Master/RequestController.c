@@ -105,6 +105,10 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 	}
 	else if ( probe->PCM )
 	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, HID );
+	}
+	else if ( probe->HID )
+	{
 		probe->Message.mn_Length = sizeof( *probe );
 	}
 
@@ -144,7 +148,8 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 		( ( probe->ObjectPush ) && ( ! ( controller->Capabilities & BT2_CAP_OBJECTPUSH ) ) ) ||
 		( ( probe->LE ) && ( ! ( controller->Capabilities & BT2_CAP_LE ) ) ) ||
 		( ( probe->Audio ) && ( ! ( controller->Capabilities & BT2_CAP_A2DP ) ) ) ||
-		( ( probe->PCM ) && ( ! ( controller->Capabilities & BT2_CAP_PCM ) ) ) )
+		( ( probe->PCM ) && ( ! ( controller->Capabilities & BT2_CAP_PCM ) ) ) ||
+		( ( probe->HID ) && ( ! ( controller->Capabilities & ( probe->HID->Seconds ? BT2_CAP_HID : BT2_CAP_HID_INPUT ) ) ) ) )
 	{
 		base->Exec->ReleaseSemaphore( & base->ControllerLock );
 
@@ -180,6 +185,10 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 	else if ( probe->PCM )
 	{
 		WaitForCancellableReply( base, reply, & probe->PCM->Audio.Cancel );
+	}
+	else if ( probe->HID )
+	{
+		WaitForCancellableReply( base, reply, & probe->HID->Cancel );
 	}
 	else
 	{

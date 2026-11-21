@@ -9,26 +9,24 @@
 // --
 
 #include "bt2_all.h"
-#include "bt2_l2cap.h"
+#include "bt2_hci.h"
 
 // --
 
 static enum BTHCIResult
-_serial_ExchangeController( struct Bluetooth2SerialIFace *self, U32 unit,
-	struct BTRFCOMMTransfer *transfer, struct BTHCIError *error )
+_le_RunController( struct Bluetooth2LEIFace *self, U32 unit,
+	struct BTLERequest *request, struct BTHCIError *error )
 {
 	struct BTControllerLocation location;
 	struct BTControllerProbe probe;
 
-	if ( ! transfer )
+	if ( ! request )
 	{
 		return ( BT_HCI_INVALID_ARGUMENT );
 	}
 
-	transfer->Peer.Stage = BT_RFCOMM_STAGE_LINK;
-	transfer->Sent = 0;
-	transfer->ReplyLength = 0;
-	transfer->ReplyTruncated = 0;
+	request->Count = 0;
+	request->Truncated = 0;
 	probe.Info = NULL;
 	probe.Error = error;
 	probe.Inquiry = NULL;
@@ -39,29 +37,16 @@ _serial_ExchangeController( struct Bluetooth2SerialIFace *self, U32 unit,
 	probe.EchoAddress = NULL;
 	probe.Services = NULL;
 	probe.RFCOMM = NULL;
-	probe.Serial = transfer;
+	probe.Serial = NULL;
 	probe.SerialFile = NULL;
 	probe.SerialCapture = NULL;
 	probe.ObjectPush = NULL;
-	probe.LE = NULL;
+	probe.LE = request;
 	probe.Audio = NULL;
 	probe.PCM = NULL;
+	probe.HID = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
-}
-
-// --
-
-static enum BTHCIResult
-_serial_Exchange( struct Bluetooth2SerialIFace *self, const struct BTACLTransport *transport,
-	struct BTRFCOMMTransfer *transfer, struct BTHCIError *error )
-{
-	if ( ! transfer )
-	{
-		return ( BT_HCI_INVALID_ARGUMENT );
-	}
-
-	return ( RunRFCOMMWithBond( (PTR) self->Data.LibBase, transport, & transfer->Peer, transfer, error ) );
 }
 
 // --

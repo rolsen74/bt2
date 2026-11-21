@@ -29,9 +29,11 @@ OBEX_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(OBEX_SOURCES))
 A2DP_SOURCES := $(sort $(wildcard Stack/A2DP/*.c))
 A2DP_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(A2DP_SOURCES)) $(OBJDIR)/ThirdParty/libsbc/bits.o $(OBJDIR)/ThirdParty/libsbc/sbc.o
 $(OBJDIR)/ThirdParty/libsbc/sbc.o: CPPFLAGS += -Dmemset=BT2_SBCMemset
+HID_SOURCES := $(sort $(wildcard Stack/HID/*.c))
+HID_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(HID_SOURCES))
 MASTER_SOURCES := $(sort $(wildcard Stack/Master/*.c))
 MASTER_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(MASTER_SOURCES))
-OBJECTS := $(HCI_OBJECTS) $(BOND_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS) $(MASTER_OBJECTS) $(OBJDIR)/Stack/Device/Device.o $(OBJDIR)/Stack/Device/Fullboot.o
+OBJECTS := $(HCI_OBJECTS) $(BOND_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS) $(HID_OBJECTS) $(MASTER_OBJECTS) $(OBJDIR)/Stack/Device/Device.o $(OBJDIR)/Stack/Device/Fullboot.o
 
 .PHONY: all archive clean
 
@@ -43,9 +45,9 @@ $(BINDIR)/$(TARGET): $(OBJECTS) makefile
 	mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
 
-$(BINDIR)/libbt2.a: $(HCI_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS) makefile
+$(BINDIR)/libbt2.a: $(HCI_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS) $(HID_OBJECTS) makefile
 	mkdir -p $(dir $@)
-	$(AR) rcs $@ $(HCI_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS)
+	$(AR) rcs $@ $(HCI_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS) $(HID_OBJECTS)
 
 $(OBJDIR)/%.o: %.c makefile
 	mkdir -p $(dir $@)

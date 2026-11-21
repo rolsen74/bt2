@@ -8,24 +8,33 @@
 
 // --
 
+#include <dos/dostags.h>
+#include <proto/dos.h>
 #include "bt2_all.h"
+#include "bt2_obex.h"
+#include "bt2_sdp.h"
 
 // --
 
 static enum BTHCIResult
-_sdp_BrowseController( struct Bluetooth2SDPIFace *self, U32 unit, struct BTServiceQuery *query, struct BTHCIError *error )
+_objectpush_PushController( struct Bluetooth2ObjectPushIFace *self, U32 unit,
+	struct BTObjectPush *push, struct BTHCIError *error )
 {
 	struct BTControllerLocation location;
 	struct BTControllerProbe probe;
 
-	if ( ! query )
+	if ( ( ! push ) || ( ! push->Path ) )
 	{
 		return ( BT_HCI_INVALID_ARGUMENT );
 	}
 
-	query->Count = 0;
-	query->Status = 0;
-	query->Truncated = 0;
+	push->Peer.Stage = BT_RFCOMM_STAGE_LINK;
+	push->Sent = 0;
+	push->FileError = 0;
+	push->Response = 0;
+
+	__atomic_store_n( & push->Cancel, 0, __ATOMIC_RELAXED );
+
 	probe.Info = NULL;
 	probe.Error = error;
 	probe.Inquiry = NULL;
@@ -34,26 +43,18 @@ _sdp_BrowseController( struct Bluetooth2SDPIFace *self, U32 unit, struct BTServi
 	probe.RemoteName = NULL;
 	probe.Visibility = NULL;
 	probe.EchoAddress = NULL;
-	probe.Services = query;
+	probe.Services = NULL;
 	probe.RFCOMM = NULL;
 	probe.Serial = NULL;
 	probe.SerialFile = NULL;
 	probe.SerialCapture = NULL;
-	probe.ObjectPush = NULL;
+	probe.ObjectPush = push;
 	probe.LE = NULL;
 	probe.Audio = NULL;
 	probe.PCM = NULL;
+	probe.HID = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
-}
-
-// --
-
-static enum BTHCIResult
-_sdp_Browse( struct Bluetooth2SDPIFace *self __attribute__((unused)),
-	const struct BTACLTransport *transport, struct BTServiceQuery *query, struct BTHCIError *error )
-{
-	return ( BT_BrowseServices( transport, query, error ) );
 }
 
 // --

@@ -8,27 +8,34 @@
 
 // --
 
+#include <proto/dos.h>
 #include "bt2_all.h"
+#include "bt2_rfcomm.h"
 
 // --
 
 static enum BTHCIResult
-_pairing_PairController( struct Bluetooth2PairingIFace *self, U32 unit,
-	const struct BTPairRequest *pair, struct BTHCIError *error )
+_serialfile_SendController( struct Bluetooth2SerialFileIFace *self, U32 unit,
+	struct BTRFCOMMFile *file, struct BTHCIError *error )
 {
 	struct BTControllerLocation location;
 	struct BTControllerProbe probe;
 
-	if ( ! pair )
+	if ( ( ! file ) || ( ! file->Path ) )
 	{
 		return ( BT_HCI_INVALID_ARGUMENT );
 	}
 
+	file->Peer.Stage = BT_RFCOMM_STAGE_LINK;
+	file->Sent = 0;
+	file->FileError = 0;
+
+	__atomic_store_n( & file->Cancel, 0, __ATOMIC_RELAXED );
+
 	probe.Info = NULL;
 	probe.Error = error;
 	probe.Inquiry = NULL;
-	probe.Pair = pair;
-
+	probe.Pair = NULL;
 	probe.Bond = NULL;
 	probe.RemoteName = NULL;
 	probe.Visibility = NULL;
@@ -36,23 +43,15 @@ _pairing_PairController( struct Bluetooth2PairingIFace *self, U32 unit,
 	probe.Services = NULL;
 	probe.RFCOMM = NULL;
 	probe.Serial = NULL;
-	probe.SerialFile = NULL;
+	probe.SerialFile = file;
 	probe.SerialCapture = NULL;
 	probe.ObjectPush = NULL;
 	probe.LE = NULL;
 	probe.Audio = NULL;
 	probe.PCM = NULL;
+	probe.HID = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
-}
-
-// --
-
-static enum BTHCIResult
-_pairing_Pair( struct Bluetooth2PairingIFace *self __attribute__((unused)), const struct BTHCITransport *transport,
-	const struct BTPairRequest *pair, struct BTHCIError *error )
-{
-	return ( BT_Pair( transport, pair, error ) );
 }
 
 // --

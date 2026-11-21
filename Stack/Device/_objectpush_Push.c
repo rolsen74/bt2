@@ -17,48 +17,6 @@
 // --
 
 static enum BTHCIResult
-_objectpush_PushController( struct Bluetooth2ObjectPushIFace *self, U32 unit,
-	struct BTObjectPush *push, struct BTHCIError *error )
-{
-	struct BTControllerLocation location;
-	struct BTControllerProbe probe;
-
-	if ( ( ! push ) || ( ! push->Path ) )
-	{
-		return ( BT_HCI_INVALID_ARGUMENT );
-	}
-
-	push->Peer.Stage = BT_RFCOMM_STAGE_LINK;
-	push->Sent = 0;
-	push->FileError = 0;
-	push->Response = 0;
-
-	__atomic_store_n( & push->Cancel, 0, __ATOMIC_RELAXED );
-
-	probe.Info = NULL;
-	probe.Error = error;
-	probe.Inquiry = NULL;
-	probe.Pair = NULL;
-	probe.Bond = NULL;
-	probe.RemoteName = NULL;
-	probe.Visibility = NULL;
-	probe.EchoAddress = NULL;
-	probe.Services = NULL;
-	probe.RFCOMM = NULL;
-	probe.Serial = NULL;
-	probe.SerialFile = NULL;
-	probe.SerialCapture = NULL;
-	probe.ObjectPush = push;
-	probe.LE = NULL;
-	probe.Audio = NULL;
-	probe.PCM = NULL;
-
-	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
-}
-
-// --
-
-static enum BTHCIResult
 PushOpenedObject( struct Bluetooth2Base *base, const struct BTACLTransport *transport,
 	struct BTFileSource *source, struct BTObjectPush *request, struct BTHCIError *error )
 {

@@ -14,6 +14,7 @@ and event parsing use a transport interface.
 | `Stack/RFCOMM/` | Serial channel setup and data exchange |
 | `Stack/OBEX/` | Outgoing Bluetooth Object Push over RFCOMM |
 | `Stack/A2DP/` | AVDTP signaling and SBC playback to Classic audio sinks |
+| `Stack/HID/` | Classic Bluetooth HID Boot Protocol report monitoring and live input |
 | `Stack/Device/` | Exec device, cold-start and after-DOS residents, and main interface |
 | `Stack/Master/` | After-DOS process and controller registration |
 | `inc_Public/` | Host API and transport interface |
@@ -98,6 +99,13 @@ summary records audio duration, send time, and late packets.
 Bluetooth2 1.20 allows the controller to use higher-throughput BR/EDR
 packet types on A2DP connections. The revised playback timing is awaiting
 a hardware test.
+Bluetooth2 1.21 and Bluetooth.Driver 1.17 add
+`USB2BluetoothTest HID=<address> SECONDS=15` for Classic HID Boot Protocol
+keyboards and mice. The test opens the HID control and interrupt channels
+and reports the received input in the Shell. Bluetooth2 1.22,
+Bluetooth.Driver 1.18, and USB2BluetoothTest 0.22 add `HID=<address> INPUT`
+to route a bonded device to AmigaOS `input.device`. Hardware testing and
+HID over GATT are pending.
 An Amiga serial device, Secure Simple Pairing, LE connections, and GATT
 are pending.
 

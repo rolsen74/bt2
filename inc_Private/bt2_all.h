@@ -14,8 +14,8 @@ typedef int32_t S32;
 typedef void *PTR;
 
 #define BLUETOOTH2_VERSION 1
-#define BLUETOOTH2_REVISION 20
-#define BLUETOOTH2_ID BLUETOOTH2_NAME " 1.20 (21.11.2026)"
+#define BLUETOOTH2_REVISION 22
+#define BLUETOOTH2_ID BLUETOOTH2_NAME " 1.22 (21.11.2026)"
 
 #define BT2_CAP_INQUIRY ( 1U << 0 )
 #define BT2_CAP_PAIRING ( 1U << 1 )
@@ -32,6 +32,8 @@ typedef void *PTR;
 #define BT2_CAP_LE ( 1U << 12 )
 #define BT2_CAP_A2DP ( 1U << 13 )
 #define BT2_CAP_PCM ( 1U << 14 )
+#define BT2_CAP_HID ( 1U << 15 )
+#define BT2_CAP_HID_INPUT ( 1U << 16 )
 
 struct BTController
 {

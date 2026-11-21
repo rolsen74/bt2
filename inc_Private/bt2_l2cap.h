@@ -52,12 +52,15 @@ BT2_LinkCancelled( const struct BTL2CAPLink *link )
 enum BTHCIResult BT2_OpenDataLink( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
 	const uint8_t *address, struct BTHCIError *error );
 enum BTHCIResult BT2_CloseDataLink( struct BTL2CAPLink *link, enum BTHCIResult previous, struct BTHCIError *error );
+enum BTHCIResult BT2_ReadL2CAPWithTimeouts( struct BTL2CAPLink *link, struct BTL2CAPPacket *pdu,
+	uint32_t *reads, uint32_t retryLimit, struct BTHCIError *error );
 enum BTHCIResult BT2_ReadL2CAP( struct BTL2CAPLink *link, struct BTL2CAPPacket *pdu,
 	uint32_t *reads, struct BTHCIError *error );
 enum BTHCIResult BT2_WriteL2CAP( struct BTL2CAPLink *link, uint16_t cid, const uint8_t *data, uint32_t length,
 	struct BTHCIError *error );
 enum BTHCIResult BT2_WriteSignal( struct BTL2CAPLink *link, uint8_t code, uint8_t id,
 	const uint8_t *data, uint8_t length, struct BTHCIError *error );
+void BT2_AccountCompletedPackets( struct BTL2CAPLink *link, const uint8_t *event, uint32_t length );
 int BT2_DecodeSignal( const uint8_t **cursor, uint32_t *remaining, struct BTL2CAPSignal *signal );
 
 enum BTHCIResult BT2_OpenChannel( struct BTL2CAPLink *link, uint16_t psm, uint16_t localCID,

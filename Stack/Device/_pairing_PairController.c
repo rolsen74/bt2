@@ -13,24 +13,24 @@
 // --
 
 static enum BTHCIResult
-_names_ReadName( struct Bluetooth2NamesIFace *self, U32 unit,
-	struct BTRemoteName *remote, struct BTHCIError *error )
+_pairing_PairController( struct Bluetooth2PairingIFace *self, U32 unit,
+	const struct BTPairRequest *pair, struct BTHCIError *error )
 {
 	struct BTControllerLocation location;
 	struct BTControllerProbe probe;
 
-	if ( ! remote )
+	if ( ! pair )
 	{
 		return ( BT_HCI_INVALID_ARGUMENT );
 	}
 
-	remote->Name[0] = 0;
 	probe.Info = NULL;
 	probe.Error = error;
 	probe.Inquiry = NULL;
-	probe.Pair = NULL;
+	probe.Pair = pair;
+
 	probe.Bond = NULL;
-	probe.RemoteName = remote;
+	probe.RemoteName = NULL;
 	probe.Visibility = NULL;
 	probe.EchoAddress = NULL;
 	probe.Services = NULL;
@@ -42,17 +42,9 @@ _names_ReadName( struct Bluetooth2NamesIFace *self, U32 unit,
 	probe.LE = NULL;
 	probe.Audio = NULL;
 	probe.PCM = NULL;
+	probe.HID = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
-}
-
-// --
-
-static enum BTHCIResult
-_names_ReadRemoteName( struct Bluetooth2NamesIFace *self __attribute__((unused)), const struct BTHCITransport *transport,
-	struct BTRemoteName *remote, struct BTHCIError *error )
-{
-	return ( BT_ReadRemoteName( transport, remote, error ) );
 }
 
 // --
