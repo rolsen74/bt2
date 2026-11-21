@@ -14,12 +14,22 @@ typedef int32_t S32;
 typedef void *PTR;
 
 #define BLUETOOTH2_VERSION 1
-#define BLUETOOTH2_REVISION 5
-#define BLUETOOTH2_ID BLUETOOTH2_NAME " 1.5 (21.11.2026)"
+#define BLUETOOTH2_REVISION 15
+#define BLUETOOTH2_ID BLUETOOTH2_NAME " 1.15 (21.11.2026)"
 
 #define BT2_CAP_INQUIRY ( 1U << 0 )
 #define BT2_CAP_PAIRING ( 1U << 1 )
 #define BT2_CAP_BONDING ( 1U << 2 )
+#define BT2_CAP_NAMES ( 1U << 3 )
+#define BT2_CAP_VISIBILITY ( 1U << 4 )
+#define BT2_CAP_L2CAP ( 1U << 5 )
+#define BT2_CAP_SDP ( 1U << 6 )
+#define BT2_CAP_RFCOMM ( 1U << 7 )
+#define BT2_CAP_SERIAL ( 1U << 8 )
+#define BT2_CAP_SERIALFILE ( 1U << 9 )
+#define BT2_CAP_SERIALCAPTURE ( 1U << 10 )
+#define BT2_CAP_OBJECTPUSH ( 1U << 11 )
+#define BT2_CAP_LE ( 1U << 12 )
 
 struct BTController
 {
@@ -70,5 +80,8 @@ enum BTHCIResult BT2_RequestController( struct Bluetooth2Base *base, U32 unit,
 
 enum BTHCIResult BT2_Bond( struct Bluetooth2Base *base, const struct BTHCITransport *transport,
 	struct BTBondRequest *bond, struct BTHCIError *error );
+
+enum BTHCIResult BT2_LoadBondKey( struct Bluetooth2Base *base, const struct BTHCITransport *transport,
+	const uint8_t *peer, uint8_t *key, struct BTHCIError *error );
 
 #endif

@@ -290,8 +290,8 @@ WaitPairEvent( const struct BTHCITransport *transport, const struct BTPairReques
 
 // --
 
-static enum BTHCIResult
-Connect( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
+enum BTHCIResult
+BT2_OpenClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
 	struct BTPairKeys *keys, uint16_t *handle, struct BTHCIError *error )
 {
 	enum BTHCIResult result;
@@ -351,6 +351,51 @@ LinkCommand( const struct BTHCITransport *transport, const struct BTPairRequest 
 // --
 
 enum BTHCIResult
+BT2_CloseClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
+	struct BTPairKeys *keys, uint16_t handle, struct BTHCIError *error )
+{
+	struct BTHCIError resetError;
+	enum BTHCIResult result;
+
+	if ( handle == BT_CLASSIC_INVALID_HANDLE )
+	{
+		// An incomplete Create Connection may still have paging in progress.
+		return ( BT_ResetController( transport, error ) );
+	}
+
+	result = LinkCommand( transport, pair, keys, HCI_DISCONNECT, 0x13, HCI_EVENT_DISCONNECTION_COMPLETE, & handle, error );
+
+	if ( result != BT_HCI_OK )
+	{
+		BT_ResetController( transport, & resetError );
+	}
+
+	return ( result );
+}
+
+// --
+
+enum BTHCIResult
+BT2_AuthenticateClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
+	struct BTPairKeys *keys, uint16_t handle, struct BTHCIError *error )
+{
+	enum BTHCIResult result;
+
+	result = LinkCommand( transport, pair, keys, HCI_AUTHENTICATION_REQUESTED, 0,
+		HCI_EVENT_AUTHENTICATION_COMPLETE, & handle, error );
+
+	if ( result == BT_HCI_OK )
+	{
+		result = LinkCommand( transport, pair, keys, HCI_SET_CONNECTION_ENCRYPTION, 1,
+			HCI_EVENT_ENCRYPTION_CHANGE, & handle, error );
+	}
+
+	return ( result );
+}
+
+// --
+
+enum BTHCIResult
 BT2_PairWithKeys( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
 	struct BTPairKeys *keys, struct BTHCIError *error )
 {
@@ -366,42 +411,22 @@ BT2_PairWithKeys( const struct BTHCITransport *transport, const struct BTPairReq
 		return ( BT_HCI_INVALID_ARGUMENT );
 	}
 
-	handle = 0xffff;
+	handle = BT_CLASSIC_INVALID_HANDLE;
 
-	result = Connect( transport, pair, keys, & handle, error );
-
-	if ( result == BT_HCI_OK )
-	{
-		result = LinkCommand( transport, pair, keys, HCI_AUTHENTICATION_REQUESTED, 0,
-			HCI_EVENT_AUTHENTICATION_COMPLETE, & handle, error );
-	}
+	result = BT2_OpenClassicLink( transport, pair, keys, & handle, error );
 
 	if ( result == BT_HCI_OK )
 	{
-		result = LinkCommand( transport, pair, keys, HCI_SET_CONNECTION_ENCRYPTION, 1,
-			HCI_EVENT_ENCRYPTION_CHANGE, & handle, error );
+		result = BT2_AuthenticateClassicLink( transport, pair, keys, handle, error );
 	}
 
-	if ( handle != 0xffff )
-	{
-		cleanupResult = LinkCommand( transport, pair, keys, HCI_DISCONNECT, 0x13,
-			HCI_EVENT_DISCONNECTION_COMPLETE, & handle, & cleanupError );
+	cleanupResult = BT2_CloseClassicLink( transport, pair, keys, handle, & cleanupError );
 
-		if ( cleanupResult != BT_HCI_OK )
-		{
-			if ( result == BT_HCI_OK )
-			{
-				result = cleanupResult;
-				*error = cleanupError;
-			}
-
-			BT_ResetController( transport, & cleanupError );
-		}
-	}
-	else
+	if ( ( result == BT_HCI_OK ) && ( cleanupResult != BT_HCI_OK ) )
 	{
-		// An incomplete Create Connection may still have paging in progress.
-		BT_ResetController( transport, & cleanupError );
+		*error = cleanupError;
+
+		return ( cleanupResult );
 	}
 
 	return ( result );

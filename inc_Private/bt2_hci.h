@@ -24,4 +24,24 @@ struct BTPairKeys
 enum BTHCIResult BT2_PairWithKeys( const struct BTHCITransport *transport,
 	const struct BTPairRequest *pair, struct BTPairKeys *keys, struct BTHCIError *error );
 
+enum BTHCIResult BT2_CompleteCommand( const struct BTHCITransport *transport, const uint8_t *command,
+	uint32_t commandLength, uint8_t *reply, uint32_t replyLength, struct BTHCIError *error );
+
+enum BTHCIResult BT2_RunVisible( const struct BTHCITransport *transport, const struct BTVisibility *visibility,
+	int (*expired)( void *context ), void *context, struct BTHCIError *error );
+
+#define BT_CLASSIC_INVALID_HANDLE 0xffff
+
+enum BTHCIResult BT2_OpenClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
+	struct BTPairKeys *keys, uint16_t *handle, struct BTHCIError *error );
+enum BTHCIResult BT2_CloseClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
+	struct BTPairKeys *keys, uint16_t handle, struct BTHCIError *error );
+
+enum BTHCIResult BT2_AuthenticateClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
+	struct BTPairKeys *keys, uint16_t handle, struct BTHCIError *error );
+
+enum BTHCIResult BT2_RunLE( const struct BTHCITransport *transport, struct BTLERequest *request,
+	int (*expired)( void *context ), void *context, struct BTHCIError *error );
+int BT2_ParseLEReports( struct BTLERequest *request, const uint8_t *event, uint32_t length );
+
 #endif

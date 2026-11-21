@@ -17,26 +17,24 @@
 // --
 
 enum BTHCIResult
-BT_HCICommand( const struct BTHCITransport *transport, uint16_t opcode,
+BT2_CompleteCommand( const struct BTHCITransport *transport, const uint8_t *command, uint32_t commandLength,
 	uint8_t *reply, uint32_t replyLength, struct BTHCIError *error )
 {
 	enum BTHCIResult result;
 
-	uint8_t command[3];
+	uint16_t opcode;
 	uint8_t event[HCI_EVENT_MAX];
 	uint32_t reads;
 	uint32_t total;
 	uint32_t byte;
 
-	command[0] = opcode & 0xff;
-	command[1] = opcode >> 8;
-	command[2] = 0;
+	opcode = command[0] | ( (uint16_t) command[1] << 8 );
 	error->Opcode = opcode;
 	error->TransportError = 0;
 	error->Status = 0;
 	reads = 64;
 
-	error->TransportError = transport->StartCommand( transport->Context, command, sizeof( command ) );
+	error->TransportError = transport->StartCommand( transport->Context, command, commandLength );
 
 	if ( error->TransportError )
 	{
@@ -85,6 +83,21 @@ BT_HCICommand( const struct BTHCITransport *transport, uint16_t opcode,
 	}
 
 	return ( BT_HCI_INVALID_REPLY );
+}
+
+// --
+
+enum BTHCIResult
+BT_HCICommand( const struct BTHCITransport *transport, uint16_t opcode,
+	uint8_t *reply, uint32_t replyLength, struct BTHCIError *error )
+{
+	uint8_t command[3];
+
+	command[0] = opcode & 0xff;
+	command[1] = opcode >> 8;
+	command[2] = 0;
+
+	return ( BT2_CompleteCommand( transport, command, sizeof( command ), reply, replyLength, error ) );
 }
 
 // --

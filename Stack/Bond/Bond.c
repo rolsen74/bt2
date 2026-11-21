@@ -61,15 +61,54 @@ BondName( STRPTR name, const uint8_t *local, const uint8_t *peer )
 // --
 
 static enum BTHCIResult
+ReadBondKey( struct Bluetooth2Base *base, struct DOSIFace *dos, const char *name, uint8_t *key )
+{
+	enum BTHCIResult result;
+
+	uint8_t saved[BT_LINK_KEY_SIZE + 1];
+	S32 length;
+	U32 byte;
+
+	base->Exec->ObtainSemaphore( & base->BondLock );
+
+	length = dos->GetVar( name, (STRPTR) saved, sizeof( saved ), BT_BOND_FLAGS | GVF_DONT_NULL_TERM );
+
+	if ( length == BT_LINK_KEY_SIZE )
+	{
+		for( byte = 0; byte < BT_LINK_KEY_SIZE; byte++ )
+		{
+			key[byte] = saved[byte];
+		}
+
+		result = BT_HCI_OK;
+	}
+	else
+	{
+		result = ( ( length < 0 ) && ( dos->IoErr() == ERROR_OBJECT_NOT_FOUND ) ) ?
+			BT_HCI_NO_SAVED_KEY : BT_HCI_BOND_IO_ERROR;
+	}
+
+	base->Exec->ReleaseSemaphore( & base->BondLock );
+
+	for( byte = 0; byte < sizeof( saved ); byte++ )
+	{
+		((volatile uint8_t *)saved)[byte] = 0;
+	}
+
+	return ( result );
+}
+
+// --
+
+static enum BTHCIResult
 RunBond( struct Bluetooth2Base *base, struct DOSIFace *dos, const struct BTHCITransport *transport,
 	struct BTBondRequest *bond, const char *name, struct BTHCIError *error )
 {
 	struct BTPairKeys keys;
 	enum BTHCIResult result;
 
-	uint8_t saved[BT_LINK_KEY_SIZE + 1];
+	uint8_t saved[BT_LINK_KEY_SIZE];
 	U32 byte;
-	S32 length;
 	S32 savedOK;
 
 	keys.Saved = NULL;
@@ -78,18 +117,10 @@ RunBond( struct Bluetooth2Base *base, struct DOSIFace *dos, const struct BTHCITr
 
 	if ( bond->Reconnect )
 	{
-		base->Exec->ObtainSemaphore( & base->BondLock );
+		result = ReadBondKey( base, dos, name, saved );
 
-		length = dos->GetVar( name, (STRPTR) saved, sizeof( saved ), BT_BOND_FLAGS | GVF_DONT_NULL_TERM );
-
-		savedOK = ( length < 0 ) && ( dos->IoErr() == ERROR_OBJECT_NOT_FOUND );
-
-		base->Exec->ReleaseSemaphore( & base->BondLock );
-
-		if ( length != BT_LINK_KEY_SIZE )
+		if ( result != BT_HCI_OK )
 		{
-			result = savedOK ? BT_HCI_NO_SAVED_KEY : BT_HCI_BOND_IO_ERROR;
-
 			goto clear_keys;
 		}
 
@@ -177,6 +208,53 @@ BT2_Bond( struct Bluetooth2Base *base, const struct BTHCITransport *transport,
 		BondName( name, info.Address, bond->Peer.Address );
 
 		result = RunBond( base, dos, transport, bond, name, error );
+
+		base->Exec->DropInterface( (PTR) dos );
+	}
+	else
+	{
+		result = BT_HCI_BOND_IO_ERROR;
+	}
+
+	base->Exec->CloseLibrary( dosBase );
+
+	return ( result );
+}
+
+// --
+
+enum BTHCIResult
+BT2_LoadBondKey( struct Bluetooth2Base *base, const struct BTHCITransport *transport, const uint8_t *peer,
+	uint8_t *key, struct BTHCIError *error )
+{
+	struct BTControllerInfo info;
+	struct DOSIFace *dos;
+	struct Library *dosBase;
+	enum BTHCIResult result;
+
+	char name[BT_BOND_NAME_SIZE];
+
+	result = BT_ReadControllerInfo( transport, & info, error );
+
+	if ( result != BT_HCI_OK )
+	{
+		return ( result );
+	}
+
+	dosBase = base->Exec->OpenLibrary( "dos.library", 50 );
+
+	if ( ! dosBase )
+	{
+		return ( BT_HCI_BOND_IO_ERROR );
+	}
+
+	dos = (PTR) base->Exec->GetInterface( dosBase, "main", 1, NULL );
+
+	if ( dos )
+	{
+		BondName( name, info.Address, peer );
+
+		result = ReadBondKey( base, dos, name, key );
 
 		base->Exec->DropInterface( (PTR) dos );
 	}

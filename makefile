@@ -18,9 +18,17 @@ HCI_SOURCES := $(sort $(wildcard Stack/HCI/*.c))
 HCI_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(HCI_SOURCES))
 BOND_SOURCES := $(sort $(wildcard Stack/Bond/*.c))
 BOND_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(BOND_SOURCES))
+L2CAP_SOURCES := $(sort $(wildcard Stack/L2CAP/*.c))
+L2CAP_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(L2CAP_SOURCES))
+SDP_SOURCES := $(sort $(wildcard Stack/SDP/*.c))
+SDP_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(SDP_SOURCES))
+RFCOMM_SOURCES := $(sort $(wildcard Stack/RFCOMM/*.c))
+RFCOMM_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(RFCOMM_SOURCES))
+OBEX_SOURCES := $(sort $(wildcard Stack/OBEX/*.c))
+OBEX_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(OBEX_SOURCES))
 MASTER_SOURCES := $(sort $(wildcard Stack/Master/*.c))
 MASTER_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(MASTER_SOURCES))
-OBJECTS := $(HCI_OBJECTS) $(BOND_OBJECTS) $(MASTER_OBJECTS) $(OBJDIR)/Stack/Device/Device.o $(OBJDIR)/Stack/Device/Fullboot.o
+OBJECTS := $(HCI_OBJECTS) $(BOND_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(MASTER_OBJECTS) $(OBJDIR)/Stack/Device/Device.o $(OBJDIR)/Stack/Device/Fullboot.o
 
 .PHONY: all archive clean
 
@@ -32,9 +40,9 @@ $(BINDIR)/$(TARGET): $(OBJECTS) makefile
 	mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
 
-$(BINDIR)/libbt2.a: $(HCI_OBJECTS) makefile
+$(BINDIR)/libbt2.a: $(HCI_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) makefile
 	mkdir -p $(dir $@)
-	$(AR) rcs $@ $(HCI_OBJECTS)
+	$(AR) rcs $@ $(HCI_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS)
 
 $(OBJDIR)/%.o: %.c makefile
 	mkdir -p $(dir $@)

@@ -13,6 +13,27 @@
 
 // --
 
+static void
+WaitForCancellableReply( struct Bluetooth2Base *base, struct MsgPort *reply, uint32_t *cancel )
+{
+	U32 signals;
+	U32 mask;
+
+	mask = ( 1UL << reply->mp_SigBit ) | SIGBREAKF_CTRL_C;
+
+	while( ! base->Exec->GetMsg( reply ) )
+	{
+		signals = base->Exec->Wait( mask );
+
+		if ( signals & SIGBREAKF_CTRL_C )
+		{
+			__atomic_store_n( cancel, 1, __ATOMIC_RELAXED );
+		}
+	}
+}
+
+// --
+
 enum BTHCIResult
 BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControllerLocation *location,
 	struct BTControllerProbe *probe )
@@ -35,6 +56,46 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 		probe->Message.mn_Length = offsetof( struct BTControllerProbe, Bond );
 	}
 	else if ( probe->Bond )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, RemoteName );
+	}
+	else if ( probe->RemoteName )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, Visibility );
+	}
+	else if ( probe->Visibility )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, EchoAddress );
+	}
+	else if ( probe->EchoAddress )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, Services );
+	}
+	else if ( probe->Services )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, RFCOMM );
+	}
+	else if ( probe->RFCOMM )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, Serial );
+	}
+	else if ( probe->Serial )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, SerialFile );
+	}
+	else if ( probe->SerialFile )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, SerialCapture );
+	}
+	else if ( probe->SerialCapture )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, ObjectPush );
+	}
+	else if ( probe->ObjectPush )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, LE );
+	}
+	else if ( probe->LE )
 	{
 		probe->Message.mn_Length = sizeof( *probe );
 	}
@@ -63,7 +124,17 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 
 	if ( ( ( probe->Inquiry ) && ( ! ( controller->Capabilities & BT2_CAP_INQUIRY ) ) ) ||
 		( ( probe->Pair ) && ( ! ( controller->Capabilities & BT2_CAP_PAIRING ) ) ) ||
-		( ( probe->Bond ) && ( ! ( controller->Capabilities & BT2_CAP_BONDING ) ) ) )
+		( ( probe->Bond ) && ( ! ( controller->Capabilities & BT2_CAP_BONDING ) ) ) ||
+		( ( probe->RemoteName ) && ( ! ( controller->Capabilities & BT2_CAP_NAMES ) ) ) ||
+		( ( probe->Visibility ) && ( ! ( controller->Capabilities & BT2_CAP_VISIBILITY ) ) ) ||
+		( ( probe->EchoAddress ) && ( ! ( controller->Capabilities & BT2_CAP_L2CAP ) ) ) ||
+		( ( probe->Services ) && ( ! ( controller->Capabilities & BT2_CAP_SDP ) ) ) ||
+		( ( probe->RFCOMM ) && ( ! ( controller->Capabilities & BT2_CAP_RFCOMM ) ) ) ||
+		( ( probe->Serial ) && ( ! ( controller->Capabilities & BT2_CAP_SERIAL ) ) ) ||
+		( ( probe->SerialFile ) && ( ! ( controller->Capabilities & BT2_CAP_SERIALFILE ) ) ) ||
+		( ( probe->SerialCapture ) && ( ! ( controller->Capabilities & BT2_CAP_SERIALCAPTURE ) ) ) ||
+		( ( probe->ObjectPush ) && ( ! ( controller->Capabilities & BT2_CAP_OBJECTPUSH ) ) ) ||
+		( ( probe->LE ) && ( ! ( controller->Capabilities & BT2_CAP_LE ) ) ) )
 	{
 		base->Exec->ReleaseSemaphore( & base->ControllerLock );
 
@@ -76,9 +147,28 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 
 	base->Exec->ReleaseSemaphore( & base->ControllerLock );
 
-	base->Exec->WaitPort( reply );
+	if ( probe->SerialFile )
+	{
+		WaitForCancellableReply( base, reply, & probe->SerialFile->Cancel );
+	}
+	else if ( probe->SerialCapture )
+	{
+		WaitForCancellableReply( base, reply, & probe->SerialCapture->Cancel );
+	}
+	else if ( probe->ObjectPush )
+	{
+		WaitForCancellableReply( base, reply, & probe->ObjectPush->Cancel );
+	}
+	else if ( probe->LE )
+	{
+		WaitForCancellableReply( base, reply, & probe->LE->Cancel );
+	}
+	else
+	{
+		base->Exec->WaitPort( reply );
 
-	base->Exec->GetMsg( reply );
+		base->Exec->GetMsg( reply );
+	}
 
 	base->Exec->FreeSysObject( ASOT_PORT, reply );
 
