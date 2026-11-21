@@ -1,0 +1,16 @@
+ARCHIVE ?= $(CURDIR)/bt2.lha
+
+.PHONY: all build_archive
+
+all: build_archive
+
+build_archive:
+	$(MAKE) -f makefile BINDIR=bin
+	@set -eu; \
+	archive="$(abspath $(ARCHIVE))"; \
+	stage=$$(mktemp -d "$$(dirname "$$archive")/.bt2-archive.XXXXXX"); \
+	trap 'rm -rf "$$stage"' 0; \
+	mkdir -p "$$stage/bt2/Kickstart"; \
+	cp bin/bluetooth2.kmod "$$stage/bt2/Kickstart/"; \
+	(cd "$$stage" && lha a bt2.lha bt2 && lha t bt2.lha); \
+	mv -f "$$stage/bt2.lha" "$$archive"
