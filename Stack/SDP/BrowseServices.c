@@ -8,6 +8,7 @@
 
 // --
 
+#include <stddef.h>
 #include "bt2_sdp.h"
 
 // --
@@ -81,13 +82,14 @@ ReadResponse( struct BTL2CAPLink *link, uint16_t transaction, struct BTL2CAPPack
 // --
 
 static enum BTHCIResult
-SearchAttributes( struct BTL2CAPLink *link, uint16_t remoteCID, struct BTServiceQuery *query, struct BTHCIError *error )
+SearchAttributes( struct BTL2CAPLink *link, uint16_t remoteCID, struct BTServiceQuery *query,
+	uint16_t uuid, struct BTHCIError *error )
 {
 	struct BTL2CAPPacket response;
 	enum BTHCIResult result;
 
-	// Browse root UUID 0x1002, followed by handle, class, protocol list, and name attribute IDs.
-	static const uint8_t parameters[] = { 0x35, 3, 0x19, 0x10, 0x02, SDP_MAX_ATTRIBUTE_BYTES >> 8,
+	// Search UUID, followed by handle, class, protocol list, and name attribute IDs.
+	static const uint8_t parameters[] = { 0x35, 3, 0x19, 0, 0, SDP_MAX_ATTRIBUTE_BYTES >> 8,
 		SDP_MAX_ATTRIBUTE_BYTES & 0xff, 0x35, 12, 0x09, 0, 0, 0x09, 0, 1, 0x09, 0, 4, 0x09, 1, 0 };
 	const uint8_t *data;
 	uint8_t request[SDP_HEADER_LENGTH + sizeof( parameters ) + 1 + SDP_CONTINUATION_MAX];
@@ -107,6 +109,9 @@ SearchAttributes( struct BTL2CAPLink *link, uint16_t remoteCID, struct BTService
 	{
 		request[SDP_HEADER_LENGTH + byte] = parameters[byte];
 	}
+
+	request[SDP_HEADER_LENGTH + 3] = uuid >> 8;
+	request[SDP_HEADER_LENGTH + 4] = uuid & 0xff;
 
 	for( transaction = 1; transaction <= 32; transaction++ )
 	{
@@ -192,7 +197,8 @@ SearchAttributes( struct BTL2CAPLink *link, uint16_t remoteCID, struct BTService
 // --
 
 enum BTHCIResult
-BT_BrowseServices( const struct BTACLTransport *transport, struct BTServiceQuery *query, struct BTHCIError *error )
+BT2_SearchServices( const struct BTACLTransport *transport, struct BTServiceQuery *query,
+	uint16_t uuid, const uint32_t *cancel, struct BTHCIError *error )
 {
 	struct BTL2CAPLink link;
 	enum BTHCIResult result;
@@ -208,6 +214,11 @@ BT_BrowseServices( const struct BTACLTransport *transport, struct BTServiceQuery
 	query->Status = 0;
 	query->Truncated = 0;
 
+	if ( ( cancel ) && ( __atomic_load_n( cancel, __ATOMIC_RELAXED ) ) )
+	{
+		return ( BT_RFCOMM_CANCELLED );
+	}
+
 	result = BT2_OpenDataLink( & link, transport, query->Address, error );
 
 	if ( result != BT_HCI_OK )
@@ -215,14 +226,24 @@ BT_BrowseServices( const struct BTACLTransport *transport, struct BTServiceQuery
 		return ( result );
 	}
 
+	link.Cancel = cancel;
+
 	result = BT2_OpenChannel( & link, SDP_PSM, SDP_LOCAL_CID, & remoteCID, error );
 
 	if ( result == BT_HCI_OK )
 	{
-		result = SearchAttributes( & link, remoteCID, query, error );
+		result = SearchAttributes( & link, remoteCID, query, uuid, error );
 	}
 
 	return ( BT2_CloseDataLink( & link, result, error ) );
+}
+
+// --
+
+enum BTHCIResult
+BT_BrowseServices( const struct BTACLTransport *transport, struct BTServiceQuery *query, struct BTHCIError *error )
+{
+	return ( BT2_SearchServices( transport, query, 0x1002, NULL, error ) );
 }
 
 // --

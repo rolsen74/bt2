@@ -41,6 +41,8 @@
 #include "_main_SendRFCOMMFile.c"
 #include "_main_CaptureRFCOMMFile.c"
 #include "_main_PushObject.c"
+#include "_a2dp_Play.c"
+#include "_pcm_Play.c"
 
 // --
 
@@ -273,10 +275,42 @@ static const struct TagItem LETags[] = //
 	  { MIT_Version, BLUETOOTH2_LE_VERSION },
 	  { TAG_END, 0 } };
 
+static const PTR A2DPVectors[] = //
+	{ (PTR)_main_Obtain,
+	  (PTR)_main_Release,
+	  NULL,
+	  NULL,
+	  (PTR)_a2dp_PlayController,
+	  (PTR)_a2dp_Play,
+	  (PTR)_a2dp_AddController,
+	  (PTR)-1 };
+
+static const struct TagItem A2DPTags[] = //
+	{ { MIT_Name, ( Tag ) BLUETOOTH2_A2DP_INTERFACE },
+	  { MIT_VectorTable, (Tag)A2DPVectors },
+	  { MIT_Version, BLUETOOTH2_A2DP_VERSION },
+	  { TAG_END, 0 } };
+
+static const PTR PCMVectors[] = //
+	{ (PTR)_main_Obtain,
+	  (PTR)_main_Release,
+	  NULL,
+	  NULL,
+	  (PTR)_pcm_PlayController,
+	  (PTR)_pcm_Play,
+	  (PTR)_pcm_AddController,
+	  (PTR)-1 };
+
+static const struct TagItem PCMTags[] = //
+	{ { MIT_Name, ( Tag ) BLUETOOTH2_PCM_INTERFACE },
+	  { MIT_VectorTable, (Tag)PCMVectors },
+	  { MIT_Version, BLUETOOTH2_PCM_VERSION },
+	  { TAG_END, 0 } };
+
 static const PTR DeviceInterfaces[] = //
 	{ (PTR)ManagerTags, (PTR)MainTags, (PTR)PairingTags, (PTR)BondingTags, (PTR)NamesTags,
 	  (PTR)VisibilityTags, (PTR)L2CAPTags, (PTR)SDPTags, (PTR)RFCOMMTags, (PTR)SerialTags,
-	  (PTR)SerialFileTags, (PTR)SerialCaptureTags, (PTR)ObjectPushTags, (PTR)LETags, NULL };
+	  (PTR)SerialFileTags, (PTR)SerialCaptureTags, (PTR)ObjectPushTags, (PTR)LETags, (PTR)A2DPTags, (PTR)PCMTags, NULL };
 
 // --
 

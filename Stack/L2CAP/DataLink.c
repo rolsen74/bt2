@@ -18,8 +18,8 @@
 // --
 
 enum BTHCIResult
-BT2_OpenDataLinkWithKey( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
-	const uint8_t *address, const uint8_t *key, struct BTHCIError *error )
+BT2_OpenDataLinkWithPackets( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
+	const uint8_t *address, const uint8_t *key, uint16_t packetTypes, struct BTHCIError *error )
 {
 	struct BTHCIError cleanupError;
 	struct BTPairKeys keys;
@@ -67,7 +67,7 @@ BT2_OpenDataLinkWithKey( struct BTL2CAPLink *link, const struct BTACLTransport *
 	keys.NewValid = 0;
 	keys.Sent = 0;
 
-	result = BT2_OpenClassicLink( & transport->HCI, & link->Peer, key ? & keys : NULL, & link->Handle, error );
+	result = BT2_OpenClassicLink( & transport->HCI, & link->Peer, key ? & keys : NULL, packetTypes, & link->Handle, error );
 
 	if ( ( result == BT_HCI_OK ) && ( key ) )
 	{
@@ -80,6 +80,15 @@ BT2_OpenDataLinkWithKey( struct BTL2CAPLink *link, const struct BTACLTransport *
 	}
 
 	return ( result );
+}
+
+// --
+
+enum BTHCIResult
+BT2_OpenDataLinkWithKey( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
+	const uint8_t *address, const uint8_t *key, struct BTHCIError *error )
+{
+	return ( BT2_OpenDataLinkWithPackets( link, transport, address, key, BT_ACL_PACKETS_DM1, error ) );
 }
 
 // --

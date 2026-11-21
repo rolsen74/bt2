@@ -12,6 +12,7 @@
 #include <proto/dos.h>
 #include "bt2_all.h"
 #include "bt2_obex.h"
+#include "bt2_sdp.h"
 
 // --
 
@@ -49,6 +50,8 @@ _objectpush_PushController( struct Bluetooth2ObjectPushIFace *self, U32 unit,
 	probe.SerialCapture = NULL;
 	probe.ObjectPush = push;
 	probe.LE = NULL;
+	probe.Audio = NULL;
+	probe.PCM = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
 }
@@ -123,7 +126,7 @@ _objectpush_Push( struct Bluetooth2ObjectPushIFace *self, const struct BTACLTran
 	struct Library *dosBase;
 	enum BTHCIResult result;
 
-	if ( ( ! push ) || ( ! push->Path ) || ( ! push->Peer.Channel ) || ( push->Peer.Channel > 30 ) )
+	if ( ( ! push ) || ( ! push->Path ) || ( push->Peer.Channel > 30 ) )
 	{
 		return ( BT_HCI_INVALID_ARGUMENT );
 	}
@@ -131,6 +134,16 @@ _objectpush_Push( struct Bluetooth2ObjectPushIFace *self, const struct BTACLTran
 	if ( __atomic_load_n( & push->Cancel, __ATOMIC_RELAXED ) )
 	{
 		return ( BT_RFCOMM_CANCELLED );
+	}
+
+	if ( ! push->Peer.Channel )
+	{
+		result = BT2_FindObjectPushChannel( transport, push->Peer.Address, & push->Peer.Channel, & push->Cancel, error );
+
+		if ( result != BT_HCI_OK )
+		{
+			return ( result );
+		}
 	}
 
 	base = (PTR) self->Data.LibBase;

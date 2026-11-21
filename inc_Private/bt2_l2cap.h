@@ -65,6 +65,8 @@ enum BTHCIResult BT2_OpenChannel( struct BTL2CAPLink *link, uint16_t psm, uint16
 enum BTHCIResult BT2_ServiceSignal( struct BTL2CAPLink *link, const struct BTL2CAPSignal *signal,
 	struct BTHCIError *error );
 
+enum BTHCIResult BT2_OpenDataLinkWithPackets( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
+	const uint8_t *address, const uint8_t *key, uint16_t packetTypes, struct BTHCIError *error );
 enum BTHCIResult BT2_OpenDataLinkWithKey( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
 	const uint8_t *address, const uint8_t *key, struct BTHCIError *error );
 enum BTHCIResult BT2_TestRFCOMMWithKey( const struct BTACLTransport *transport, struct BTRFCOMMTest *test,

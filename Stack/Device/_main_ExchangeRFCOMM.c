@@ -44,6 +44,8 @@ _serial_ExchangeController( struct Bluetooth2SerialIFace *self, U32 unit,
 	probe.SerialCapture = NULL;
 	probe.ObjectPush = NULL;
 	probe.LE = NULL;
+	probe.Audio = NULL;
+	probe.PCM = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
 }

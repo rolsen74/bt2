@@ -292,7 +292,7 @@ WaitPairEvent( const struct BTHCITransport *transport, const struct BTPairReques
 
 enum BTHCIResult
 BT2_OpenClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
-	struct BTPairKeys *keys, uint16_t *handle, struct BTHCIError *error )
+	struct BTPairKeys *keys, uint16_t packetTypes, uint16_t *handle, struct BTHCIError *error )
 {
 	enum BTHCIResult result;
 
@@ -304,9 +304,9 @@ BT2_OpenClassicLink( const struct BTHCITransport *transport, const struct BTPair
 		command[3 + byte] = pair->Address[5 - byte];
 	}
 
-	// Permit DM1 only. Keep role switching and cached clock offset disabled.
-	command[9] = 0x0e;
-	command[10] = 0x33;
+	// Keep role switching and cached clock offset disabled.
+	command[9] = packetTypes & 0xff;
+	command[10] = packetTypes >> 8;
 	command[11] = 2;
 	command[12] = 0;
 	command[13] = 0;
@@ -413,7 +413,7 @@ BT2_PairWithKeys( const struct BTHCITransport *transport, const struct BTPairReq
 
 	handle = BT_CLASSIC_INVALID_HANDLE;
 
-	result = BT2_OpenClassicLink( transport, pair, keys, & handle, error );
+	result = BT2_OpenClassicLink( transport, pair, keys, BT_ACL_PACKETS_DM1, & handle, error );
 
 	if ( result == BT_HCI_OK )
 	{

@@ -38,6 +38,8 @@ _l2cap_EchoController( struct Bluetooth2L2CAPIFace *self, U32 unit, const uint8_
 	probe.SerialCapture = NULL;
 	probe.ObjectPush = NULL;
 	probe.LE = NULL;
+	probe.Audio = NULL;
+	probe.PCM = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
 }

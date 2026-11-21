@@ -13,6 +13,7 @@ and event parsing use a transport interface.
 | `Stack/SDP/` | Public service discovery |
 | `Stack/RFCOMM/` | Serial channel setup and data exchange |
 | `Stack/OBEX/` | Outgoing Bluetooth Object Push over RFCOMM |
+| `Stack/A2DP/` | AVDTP signaling and SBC playback to Classic audio sinks |
 | `Stack/Device/` | Exec device, cold-start and after-DOS residents, and main interface |
 | `Stack/Master/` | After-DOS process and controller registration |
 | `inc_Public/` | Host API and transport interface |
@@ -37,10 +38,11 @@ MODULE Kickstart/bluetooth2.kmod
 ```
 
 With `lha` installed, run `make -f makefile_archive` to build the distribution
-archive `bt2.lha`. The module is packaged at `bt2/Kickstart/bluetooth2.kmod`.
+archive `bt2.lha`. The module is packaged at `bt2/Kickstart/bluetooth2.kmod`
+along with the required license notice for [libsbc](ThirdParty/libsbc/README.md).
 
 Run `make archive` to build `bin/libbt2.a` for programs that link the HCI,
-L2CAP, SDP, RFCOMM, or OBEX code directly.
+L2CAP, SDP, RFCOMM, OBEX, or A2DP code directly.
 
 Install `Bluetooth.Class` and `Bluetooth.Driver` from the sibling
 `usb2` repository in `LIBS:USB2/`. The USB driver adds a controller when
@@ -76,12 +78,26 @@ receiver using RFCOMM credit-based flow control. Bluetooth2 1.13 and
 Bluetooth.Driver 1.11 add `SAVE=<path> BYTES=<count>` to capture an exact
 byte count to a new file. Ctrl-C cancels either transfer.
 Bluetooth2 1.14 and Bluetooth.Driver 1.12 add `PUSH=<path>` for sending
-a file to a Bluetooth Object Push receiver. Use the RFCOMM channel
-listed by `SERVICES` for service class `$1105`.
+a file to a Bluetooth Object Push receiver. Bluetooth2 1.16 looks up the
+receiver's RFCOMM channel directly by service class `$1105` when
+`CHANNEL` is omitted. USB2BluetoothTest 0.18 adds a ReAction window
+for Classic scanning and outgoing file transfers with `GUI`.
 Bluetooth2 1.15 and Bluetooth.Driver 1.13 add `LESCAN` and
 `LEADVERTISE AS="Amiga"` for controllers that support legacy LE
 advertising. `PASSIVE` makes the scan listen without sending scan
 requests. Both commands take `SECONDS` and can be stopped with Ctrl-C.
+Bluetooth2 1.17, Bluetooth.Driver 1.14, and USB2BluetoothTest 0.19 add
+experimental A2DP Source playback. Use `SPEAKER=<address> PLAY=<path>`
+or choose **Play WAV** in the GUI. Playback accepts 16-bit mono or stereo
+PCM WAV files at 44.1 or 48 kHz. Bluetooth2 1.18 adds a live stereo PCM
+interface for the Bluetooth2 AHI driver in the sibling USB2 repository.
+Bluetooth2 1.19 groups SBC frames to reduce USB transfers and lowers
+the encoded bitrate when the stream repeatedly runs late. Bluetooth.Driver
+1.16 queues the HCI event read ahead of audio writes. The serial timing
+summary records audio duration, send time, and late packets.
+Bluetooth2 1.20 allows the controller to use higher-throughput BR/EDR
+packet types on A2DP connections. The revised playback timing is awaiting
+a hardware test.
 An Amiga serial device, Secure Simple Pairing, LE connections, and GATT
 are pending.
 

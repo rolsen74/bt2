@@ -290,6 +290,8 @@ _serialcapture_ReceiveController( struct Bluetooth2SerialCaptureIFace *self, U32
 	probe.SerialCapture = capture;
 	probe.ObjectPush = NULL;
 	probe.LE = NULL;
+	probe.Audio = NULL;
+	probe.PCM = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
 }

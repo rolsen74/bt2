@@ -41,6 +41,8 @@ _sdp_BrowseController( struct Bluetooth2SDPIFace *self, U32 unit, struct BTServi
 	probe.SerialCapture = NULL;
 	probe.ObjectPush = NULL;
 	probe.LE = NULL;
+	probe.Audio = NULL;
+	probe.PCM = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
 }

@@ -11,4 +11,9 @@ BT_ReadBE16( const uint8_t *data )
 
 enum BTHCIResult BT2_ParseServiceRecords( struct BTServiceQuery *query, const uint8_t *data, uint32_t length );
 
+enum BTHCIResult BT2_SearchServices( const struct BTACLTransport *transport, struct BTServiceQuery *query,
+	uint16_t uuid, const uint32_t *cancel, struct BTHCIError *error );
+enum BTHCIResult BT2_FindObjectPushChannel( const struct BTACLTransport *transport,
+	const uint8_t *address, uint8_t *channel, const uint32_t *cancel, struct BTHCIError *error );
+
 #endif

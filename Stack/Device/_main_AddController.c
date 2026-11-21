@@ -167,9 +167,8 @@ _objectpush_AddController( struct Bluetooth2ObjectPushIFace *self, struct MsgPor
 
 // --
 
-static S32
-_le_AddController( struct Bluetooth2LEIFace *self, struct MsgPort *port,
-	const struct BTControllerLocation *location, U32 acl )
+static U32
+LECapabilities( U32 acl )
 {
 	U32 capabilities;
 
@@ -182,7 +181,36 @@ _le_AddController( struct Bluetooth2LEIFace *self, struct MsgPort *port,
 			BT2_CAP_SERIALFILE | BT2_CAP_SERIALCAPTURE | BT2_CAP_OBJECTPUSH;
 	}
 
-	return ( RegisterController( (PTR) self->Data.LibBase, port, location, capabilities ) );
+	return ( capabilities );
+}
+
+// --
+
+static S32
+_le_AddController( struct Bluetooth2LEIFace *self, struct MsgPort *port,
+	const struct BTControllerLocation *location, U32 acl )
+{
+	return ( RegisterController( (PTR) self->Data.LibBase, port, location, LECapabilities( acl ) ) );
+}
+
+// --
+
+static S32
+_a2dp_AddController( struct Bluetooth2A2DPIFace *self, struct MsgPort *port,
+	const struct BTControllerLocation *location )
+{
+	return ( RegisterController( (PTR) self->Data.LibBase, port, location,
+		LECapabilities( TRUE ) | BT2_CAP_A2DP ) );
+}
+
+// --
+
+static S32
+_pcm_AddController( struct Bluetooth2PCMIFace *self, struct MsgPort *port,
+	const struct BTControllerLocation *location )
+{
+	return ( RegisterController( (PTR) self->Data.LibBase, port, location,
+		LECapabilities( TRUE ) | BT2_CAP_A2DP | BT2_CAP_PCM ) );
 }
 
 // --

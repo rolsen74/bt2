@@ -97,6 +97,14 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 	}
 	else if ( probe->LE )
 	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, Audio );
+	}
+	else if ( probe->Audio )
+	{
+		probe->Message.mn_Length = offsetof( struct BTControllerProbe, PCM );
+	}
+	else if ( probe->PCM )
+	{
 		probe->Message.mn_Length = sizeof( *probe );
 	}
 
@@ -134,7 +142,9 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 		( ( probe->SerialFile ) && ( ! ( controller->Capabilities & BT2_CAP_SERIALFILE ) ) ) ||
 		( ( probe->SerialCapture ) && ( ! ( controller->Capabilities & BT2_CAP_SERIALCAPTURE ) ) ) ||
 		( ( probe->ObjectPush ) && ( ! ( controller->Capabilities & BT2_CAP_OBJECTPUSH ) ) ) ||
-		( ( probe->LE ) && ( ! ( controller->Capabilities & BT2_CAP_LE ) ) ) )
+		( ( probe->LE ) && ( ! ( controller->Capabilities & BT2_CAP_LE ) ) ) ||
+		( ( probe->Audio ) && ( ! ( controller->Capabilities & BT2_CAP_A2DP ) ) ) ||
+		( ( probe->PCM ) && ( ! ( controller->Capabilities & BT2_CAP_PCM ) ) ) )
 	{
 		base->Exec->ReleaseSemaphore( & base->ControllerLock );
 
@@ -162,6 +172,14 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 	else if ( probe->LE )
 	{
 		WaitForCancellableReply( base, reply, & probe->LE->Cancel );
+	}
+	else if ( probe->Audio )
+	{
+		WaitForCancellableReply( base, reply, & probe->Audio->Cancel );
+	}
+	else if ( probe->PCM )
+	{
+		WaitForCancellableReply( base, reply, & probe->PCM->Audio.Cancel );
 	}
 	else
 	{

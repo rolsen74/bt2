@@ -75,6 +75,21 @@ BT2_ServiceSignal( struct BTL2CAPLink *link, const struct BTL2CAPSignal *signal,
 		return ( BT_HCI_OK );
 	}
 
+	// The outgoing profiles do not listen for incoming L2CAP channels.
+	if ( ( signal->Code == 0x02 ) && ( signal->Length == 4 ) )
+	{
+		response[0] = 0;
+		response[1] = 0;
+		response[2] = signal->Data[2];
+		response[3] = signal->Data[3];
+		response[4] = 2; // PSM not supported.
+		response[5] = 0;
+		response[6] = 0;
+		response[7] = 0;
+
+		return ( BT2_WriteSignal( link, 0x03, signal->ID, response, sizeof( response ), error ) );
+	}
+
 	if ( ( signal->Code == 0x0a ) && ( signal->Length == 2 ) )
 	{
 		response[0] = signal->Data[0];

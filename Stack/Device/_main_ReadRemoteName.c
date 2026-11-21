@@ -40,6 +40,8 @@ _names_ReadName( struct Bluetooth2NamesIFace *self, U32 unit,
 	probe.SerialCapture = NULL;
 	probe.ObjectPush = NULL;
 	probe.LE = NULL;
+	probe.Audio = NULL;
+	probe.PCM = NULL;
 
 	return ( BT2_RequestController( (PTR) self->Data.LibBase, unit, & location, & probe ) );
 }

@@ -32,8 +32,12 @@ enum BTHCIResult BT2_RunVisible( const struct BTHCITransport *transport, const s
 
 #define BT_CLASSIC_INVALID_HANDLE 0xffff
 
+// BR packet types use inclusion bits. EDR packet types use exclusion bits.
+#define BT_ACL_PACKETS_DM1 0x330e
+#define BT_ACL_PACKETS_AUDIO 0xcc18
+
 enum BTHCIResult BT2_OpenClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
-	struct BTPairKeys *keys, uint16_t *handle, struct BTHCIError *error );
+	struct BTPairKeys *keys, uint16_t packetTypes, uint16_t *handle, struct BTHCIError *error );
 enum BTHCIResult BT2_CloseClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
 	struct BTPairKeys *keys, uint16_t handle, struct BTHCIError *error );
 
