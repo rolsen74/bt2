@@ -36,6 +36,7 @@ BT2_AddController( struct Bluetooth2Base *base, struct MsgPort *port,
 	controller->Port = port;
 	controller->Location = *location;
 	controller->Capabilities = capabilities;
+	controller->References = 1;
 	unit = 0;
 
 	base->Exec->ObtainSemaphore( & base->ControllerLock );

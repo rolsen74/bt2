@@ -158,6 +158,18 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 		return ( BT_HCI_UNSUPPORTED );
 	}
 
+	// PCM needs exclusive use of the worker while opening the stream.
+	if ( ( probe->PCM ) && ( controller->References > 1 ) )
+	{
+		base->Exec->ReleaseSemaphore( & base->ControllerLock );
+
+		base->Exec->FreeSysObject( ASOT_PORT, reply );
+
+		return ( BT_HCI_CONTROLLER_BUSY );
+	}
+
+	controller->References++;
+
 	base->Exec->PutMsg( controller->Port, & probe->Message );
 
 	base->Exec->ReleaseSemaphore( & base->ControllerLock );
@@ -196,6 +208,8 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 
 		base->Exec->GetMsg( reply );
 	}
+
+	BT2_ReleaseController( base, controller );
 
 	base->Exec->FreeSysObject( ASOT_PORT, reply );
 

@@ -14,8 +14,8 @@ typedef int32_t S32;
 typedef void *PTR;
 
 #define BLUETOOTH2_VERSION 1
-#define BLUETOOTH2_REVISION 22
-#define BLUETOOTH2_ID BLUETOOTH2_NAME " 1.22 (21.11.2026)"
+#define BLUETOOTH2_REVISION 23
+#define BLUETOOTH2_ID BLUETOOTH2_NAME " 1.23 (23.11.2026)"
 
 #define BT2_CAP_INQUIRY ( 1U << 0 )
 #define BT2_CAP_PAIRING ( 1U << 1 )
@@ -42,6 +42,7 @@ struct BTController
 	struct BTControllerLocation Location;
 	S32 Capabilities;
 	U32 Unit;
+	U32 References;
 };
 
 struct Bluetooth2Base
@@ -79,6 +80,7 @@ S32 BT2_AddController( struct Bluetooth2Base *base, struct MsgPort *port,
 	const struct BTControllerLocation *location, S32 capabilities );
 void BT2_RemoveController( struct Bluetooth2Base *base, U32 unit, struct MsgPort *port );
 
+void BT2_ReleaseController( struct Bluetooth2Base *base, struct BTController *controller );
 enum BTHCIResult BT2_RequestController( struct Bluetooth2Base *base, U32 unit,
 	struct BTControllerLocation *location, struct BTControllerProbe *probe );
 

@@ -49,7 +49,7 @@ BT2_RemoveController( struct Bluetooth2Base *base, U32 unit, struct MsgPort *por
 		base->Exec->ReplyMsg( & probe->Message );
 	}
 
-	base->Exec->FreeVec( controller );
+	BT2_ReleaseController( base, controller );
 }
 
 // --
