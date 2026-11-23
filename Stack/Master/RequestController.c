@@ -13,12 +13,100 @@
 
 // --
 
-static void
-WaitForCancellableReply( struct Bluetooth2Base *base, struct MsgPort *reply, uint32_t *cancel )
+static U32 *
+CancelFlag( const struct BTControllerProbe *probe )
 {
+	if ( probe->SerialFile )
+	{
+		return ( & probe->SerialFile->Cancel );
+	}
+	if ( probe->SerialCapture )
+	{
+		return ( & probe->SerialCapture->Cancel );
+	}
+	if ( probe->ObjectPush )
+	{
+		return ( & probe->ObjectPush->Cancel );
+	}
+	if ( probe->LE )
+	{
+		return ( & probe->LE->Cancel );
+	}
+	if ( probe->Audio )
+	{
+		return ( & probe->Audio->Cancel );
+	}
+	if ( probe->PCM )
+	{
+		return ( & probe->PCM->Audio.Cancel );
+	}
+	if ( probe->HID )
+	{
+		return ( & probe->HID->Cancel );
+	}
+
+	return ( NULL );
+}
+
+// --
+
+static S32
+CancelQueued( struct Bluetooth2Base *base, struct BTController *controller, struct BTControllerProbe *probe )
+{
+	struct MsgPort *port;
+	struct Node *node;
+
+	S32 removed;
+
+	removed = FALSE;
+
+	base->Exec->ObtainSemaphore( & base->ControllerLock );
+
+	port = controller->Port;
+
+	if ( port )
+	{
+		// This task-signalled port has no interrupt producer. Exclude
+		// the worker's GetMsg while checking whether it claimed the probe.
+		base->Exec->Forbid();
+
+		for( node = port->mp_MsgList.lh_Head; node->ln_Succ; node = node->ln_Succ )
+		{
+			if ( node == & probe->Message.mn_Node )
+			{
+				base->Exec->Remove( node );
+
+				removed = TRUE;
+
+				break;
+			}
+		}
+
+		base->Exec->Permit();
+
+		if ( ! removed )
+		{
+			base->Exec->Signal( controller->Worker, 1UL << port->mp_SigBit );
+		}
+	}
+
+	base->Exec->ReleaseSemaphore( & base->ControllerLock );
+
+	return ( removed );
+}
+
+// --
+
+static void
+WaitForCancellableReply( struct Bluetooth2Base *base, struct BTController *controller,
+	struct BTControllerProbe *probe, U32 *cancel )
+{
+	struct MsgPort *reply;
+
 	U32 signals;
 	U32 mask;
 
+	reply = probe->Message.mn_ReplyPort;
 	mask = ( 1UL << reply->mp_SigBit ) | SIGBREAKF_CTRL_C;
 
 	while( ! base->Exec->GetMsg( reply ) )
@@ -28,6 +116,13 @@ WaitForCancellableReply( struct Bluetooth2Base *base, struct MsgPort *reply, uin
 		if ( signals & SIGBREAKF_CTRL_C )
 		{
 			__atomic_store_n( cancel, 1, __ATOMIC_RELAXED );
+
+			if ( CancelQueued( base, controller, probe ) )
+			{
+				probe->Result = probe->LE ? BT_LE_CANCELLED : BT_RFCOMM_CANCELLED;
+
+				return;
+			}
 		}
 	}
 }
@@ -40,6 +135,18 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 {
 	struct BTController *controller;
 	struct MsgPort *reply;
+	struct Task *caller;
+
+	U32 *cancel;
+
+	if ( ( ! location ) || ( ! probe->Error ) )
+	{
+		return ( BT_HCI_INVALID_ARGUMENT );
+	}
+
+	caller = base->Exec->FindTask( NULL );
+
+	cancel = CancelFlag( probe );
 
 	reply = base->Exec->AllocSysObjectTags( ASOT_PORT, TAG_END );
 
@@ -158,8 +265,8 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 		return ( BT_HCI_UNSUPPORTED );
 	}
 
-	// PCM needs exclusive use of the worker while opening the stream.
-	if ( ( probe->PCM ) && ( controller->References > 1 ) )
+	if ( ( controller->Worker == caller ) || ( controller->Exclusive ) ||
+		( ( probe->PCM ) && ( controller->References > 1 ) ) )
 	{
 		base->Exec->ReleaseSemaphore( & base->ControllerLock );
 
@@ -168,39 +275,21 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 		return ( BT_HCI_CONTROLLER_BUSY );
 	}
 
+	if ( ( probe->PCM ) || ( probe->Audio ) || ( probe->SerialCapture ) ||
+		( ( probe->HID ) && ( ! probe->HID->Seconds ) ) )
+	{
+		controller->Exclusive = probe;
+	}
+
 	controller->References++;
 
 	base->Exec->PutMsg( controller->Port, & probe->Message );
 
 	base->Exec->ReleaseSemaphore( & base->ControllerLock );
 
-	if ( probe->SerialFile )
+	if ( cancel )
 	{
-		WaitForCancellableReply( base, reply, & probe->SerialFile->Cancel );
-	}
-	else if ( probe->SerialCapture )
-	{
-		WaitForCancellableReply( base, reply, & probe->SerialCapture->Cancel );
-	}
-	else if ( probe->ObjectPush )
-	{
-		WaitForCancellableReply( base, reply, & probe->ObjectPush->Cancel );
-	}
-	else if ( probe->LE )
-	{
-		WaitForCancellableReply( base, reply, & probe->LE->Cancel );
-	}
-	else if ( probe->Audio )
-	{
-		WaitForCancellableReply( base, reply, & probe->Audio->Cancel );
-	}
-	else if ( probe->PCM )
-	{
-		WaitForCancellableReply( base, reply, & probe->PCM->Audio.Cancel );
-	}
-	else if ( probe->HID )
-	{
-		WaitForCancellableReply( base, reply, & probe->HID->Cancel );
+		WaitForCancellableReply( base, controller, probe, cancel );
 	}
 	else
 	{
@@ -208,6 +297,15 @@ BT2_RequestController( struct Bluetooth2Base *base, U32 unit, struct BTControlle
 
 		base->Exec->GetMsg( reply );
 	}
+
+	base->Exec->ObtainSemaphore( & base->ControllerLock );
+
+	if ( controller->Exclusive == probe )
+	{
+		controller->Exclusive = NULL;
+	}
+
+	base->Exec->ReleaseSemaphore( & base->ControllerLock );
 
 	BT2_ReleaseController( base, controller );
 

@@ -38,6 +38,8 @@ BT2_RemoveController( struct Bluetooth2Base *base, U32 unit, struct MsgPort *por
 	}
 
 	*slot = controller->Next;
+	controller->Port = NULL;
+	controller->Worker = NULL;
 
 	base->Exec->ReleaseSemaphore( & base->ControllerLock );
 

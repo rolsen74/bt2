@@ -21,7 +21,7 @@ BT2_AddController( struct Bluetooth2Base *base, struct MsgPort *port,
 
 	U32 unit;
 
-	if ( ( ! port ) || ( ! location ) )
+	if ( ( ! port ) || ( ! location ) || ( port->mp_Flags != PA_SIGNAL ) || ( ! port->mp_SigTask ) )
 	{
 		return ( -1 );
 	}
@@ -34,6 +34,8 @@ BT2_AddController( struct Bluetooth2Base *base, struct MsgPort *port,
 	}
 
 	controller->Port = port;
+	controller->Worker = port->mp_SigTask;
+	controller->Exclusive = NULL;
 	controller->Location = *location;
 	controller->Capabilities = capabilities;
 	controller->References = 1;
