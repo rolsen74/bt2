@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -14,19 +14,19 @@
 
 #define LE_REPORT_HEADER 9
 #define LE_SCAN_RESPONSE 4
-#define LE_SHORT_NAME 8
+#define LE_SHORT_NAME	 8
 #define LE_COMPLETE_NAME 9
 
 // --
 
 static void
-ReadName( struct BTLEDevice *device, const uint8_t *data, uint32_t length )
+ReadName ( struct BTLEDevice * device, const uint8_t * data, uint32_t length )
 {
 	uint32_t field;
 	uint32_t byte;
-	uint8_t type;
+	uint8_t	 type;
 
-	while( length )
+	while ( length )
 	{
 		field = *data;
 
@@ -37,15 +37,14 @@ ReadName( struct BTLEDevice *device, const uint8_t *data, uint32_t length )
 
 		type = data[1];
 
-		if ( ( field > 1 ) &&
-			( ( type == LE_COMPLETE_NAME ) || ( ( type == LE_SHORT_NAME ) && ( ! device->CompleteName ) ) ) )
+		if ( ( field > 1 ) && ( ( type == LE_COMPLETE_NAME ) || ( ( type == LE_SHORT_NAME ) && ( ! device->CompleteName ) ) ) )
 		{
-			for( byte = 0; byte < field - 1; byte++ )
+			for ( byte = 0; byte < field - 1; byte++ )
 			{
 				device->Name[byte] = data[2 + byte];
 			}
 
-			device->Name[byte] = 0;
+			device->Name[byte]	 = 0;
 			device->CompleteName = ( type == LE_COMPLETE_NAME );
 		}
 
@@ -57,29 +56,29 @@ ReadName( struct BTLEDevice *device, const uint8_t *data, uint32_t length )
 // --
 
 static void
-SaveReport( struct BTLERequest *request, const uint8_t *report )
+SaveReport ( struct BTLERequest * request, const uint8_t * report )
 {
-	struct BTLEDevice *device;
+	struct BTLEDevice * device;
 
-	volatile uint8_t *record;
-	uint8_t *data;
-	uint32_t index;
-	uint32_t byte;
-	uint32_t size;
-	uint8_t rssi;
+	volatile uint8_t * record;
+	uint8_t *		   data;
+	uint32_t		   index;
+	uint32_t		   byte;
+	uint32_t		   size;
+	uint8_t			   rssi;
 
 	size = report[8];
 
-	for( index = 0; index < request->Count; index++ )
+	for ( index = 0; index < request->Count; index++ )
 	{
-		device = & request->Devices[index];
+		device = &request->Devices[index];
 
 		if ( device->AddressType != report[1] )
 		{
 			continue;
 		}
 
-		for( byte = 0; ( byte < 6 ) && ( device->Address[byte] == report[7 - byte] ); byte++ )
+		for ( byte = 0; ( byte < 6 ) && ( device->Address[byte] == report[7 - byte] ); byte++ )
 		{
 		}
 
@@ -98,19 +97,19 @@ SaveReport( struct BTLERequest *request, const uint8_t *report )
 			return;
 		}
 
-		device = & request->Devices[request->Count++];
-		record = (volatile uint8_t *) device;
+		device = &request->Devices[request->Count++];
+		record = (volatile uint8_t *)device;
 
-		for( byte = 0; byte < sizeof( *device ); byte++ )
+		for ( byte = 0; byte < sizeof ( *device ); byte++ )
 		{
 			record[byte] = 0;
 		}
 
-		device->AddressType = report[1];
-		device->RSSI = BT_LE_RSSI_UNKNOWN;
+		device->AddressType		= report[1];
+		device->RSSI			= BT_LE_RSSI_UNKNOWN;
 		device->AdvertisingType = LE_SCAN_RESPONSE;
 
-		for( byte = 0; byte < 6; byte++ )
+		for ( byte = 0; byte < 6; byte++ )
 		{
 			device->Address[byte] = report[7 - byte];
 		}
@@ -120,33 +119,33 @@ SaveReport( struct BTLERequest *request, const uint8_t *report )
 
 	if ( rssi != BT_LE_RSSI_UNKNOWN )
 	{
-		device->RSSI = ( rssi < 128 ) ? rssi : (int32_t) rssi - 256;
+		device->RSSI = ( rssi < 128 ) ? rssi : (int32_t)rssi - 256;
 	}
 
 	if ( report[0] == LE_SCAN_RESPONSE )
 	{
 		device->ScanResponseLength = size;
-		data = device->ScanResponseData;
+		data					   = device->ScanResponseData;
 	}
 	else
 	{
-		device->AdvertisingType = report[0];
+		device->AdvertisingType	  = report[0];
 		device->AdvertisingLength = size;
-		data = device->AdvertisingData;
+		data					  = device->AdvertisingData;
 	}
 
-	for( byte = 0; byte < size; byte++ )
+	for ( byte = 0; byte < size; byte++ )
 	{
 		data[byte] = report[LE_REPORT_HEADER + byte];
 	}
 
-	ReadName( device, data, size );
+	ReadName ( device, data, size );
 }
 
 // --
 
 int
-BT2_ParseLEReports( struct BTLERequest *request, const uint8_t *event, uint32_t length )
+BT2_ParseLEReports ( struct BTLERequest * request, const uint8_t * event, uint32_t length )
 {
 	uint32_t count;
 	uint32_t index;
@@ -158,11 +157,11 @@ BT2_ParseLEReports( struct BTLERequest *request, const uint8_t *event, uint32_t 
 		return ( 0 );
 	}
 
-	count = event[3];
+	count  = event[3];
 	offset = 4;
 
 	// Check all report boundaries before updating the results.
-	for( index = 0; index < count; index++ )
+	for ( index = 0; index < count; index++ )
 	{
 		if ( length - offset < LE_REPORT_HEADER + 1 )
 		{
@@ -186,9 +185,9 @@ BT2_ParseLEReports( struct BTLERequest *request, const uint8_t *event, uint32_t 
 
 	offset = 4;
 
-	for( index = 0; index < count; index++ )
+	for ( index = 0; index < count; index++ )
 	{
-		SaveReport( request, & event[offset] );
+		SaveReport ( request, &event[offset] );
 
 		offset += LE_REPORT_HEADER + 1 + event[offset + 8];
 	}

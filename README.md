@@ -26,10 +26,13 @@ The module registers `bluetooth2.device` at cold start. Its after-DOS
 resident starts the `Bluetooth` process and logs
 `Bluetooth : Full Boot`. The master handles
 controller registration and removal. Each transport task runs its own I/O.
-Open unit 0 with `OpenDevice()`, then obtain the version 3 `main`
-interface declared in `inc_Public/interfaces/bluetooth2.h`. It exposes
-HCI reset, controller information, Classic Bluetooth discovery, and registration
-of hot-pluggable controllers. Exec I/O requests support `NSCMD_DEVICEQUERY`.
+Open unit 0 with `OpenDevice()`, then obtain the version 4 `main`
+interface declared in `inc_Public/interfaces/bluetooth2.h`. It provides
+controller registration, discovery, pairing, transport operations, audio, HID,
+preferences, and file sharing. Exec uses the `__device` manager interface
+for device lifecycle and I/O requests such as `NSCMD_DEVICEQUERY`.
+Install the rebuilt Bluetooth USB driver and preferences app with this module
+so they use the same interface version.
 
 To try the module at boot, copy it to `SYS:Kickstart/` and add the following
 line to the desired Kicklayout entry.
@@ -52,7 +55,7 @@ the adapters are attached and freed numbers can be assigned again.
 `USB2BluetoothTest` uses this registry to probe a controller by unit.
 With Bluetooth.Driver 1.1, run `USB2BluetoothTest DISCOVER` for Classic
 Bluetooth discovery on unit 0 or add `UNIT=1` for the second adapter.
-Bluetooth2 1.4 adds the version 1 `pairing` interface. Use
+Bluetooth2 1.4 introduced Classic pairing. Use
 `USB2BluetoothTest PAIR=AA:BB:CC:DD:EE:FF` with Bluetooth.Driver 1.2
 and a Classic device that supports legacy PIN pairing. The test opens an
 ACL link, verifies authentication and encryption, and disconnects.
@@ -110,3 +113,25 @@ An Amiga serial device, Secure Simple Pairing, LE connections, and GATT
 are pending.
 
 See the [usb2 project](https://github.com/rolsen74/usb2).
+
+
+## Bluetooth Preferences
+
+Install `Kickstart/bluetooth2.kmod`, `Prefs/Bluetooth2`, and `Prefs/Bluetooth2.info` from `bt2.lha`. USB adapters also need the Bluetooth class driver from `usb2.lha`.
+
+Open Bluetooth in Prefs, scan for Classic devices, select a mouse or keyboard, and enter the device PIN to pair it. Connect routes input to AmigaOS. Auto-connect saves one preferred input device per adapter and keeps reconnecting after Prefs closes and across boots. Disconnect pauses reconnect for the current boot, including if the same adapter is unplugged and reattached. Forget deletes the saved bond.
+
+Bluetooth Full Boot applies saved settings as adapters become ready. Prefs can scan, pair, or connect using a second adapter while another adapter is busy. An active Classic HID, WAV, or file-sharing session reserves its adapter. Automatic reconnect uses host-initiated Classic HID. Bluetooth LE HID and Secure Simple Pairing are outside the current stack's support.
+
+### Bluetooth file sharing
+
+In **Prefs/Bluetooth2**, choose a **Shared folder**, select a paired device, and set its file access. Access defaults to **No access**. **Read only** allows listing and downloading files. **Write only** allows uploading new files. **Read and write** enables both.
+
+Select **Start sharing** and connect from the paired device with a Classic Bluetooth OBEX File Transfer (FTP) client over RFCOMM. The share exposes files in the selected folder. Existing files are preserved when an upload uses the same name. Sharing continues if you close or iconify Prefs. Reopen Prefs and select **Stop sharing** to end the listener. The listener uses the selected adapter while active.
+
+
+Choose **Enable at boot** with a folder and adapter selected to save a startup share. At most one automatic service can use a stick, so a stick configured for input auto-connect cannot also start sharing at boot. **Start sharing** starts it now. **Stop sharing** pauses automatic sharing for the current boot, including across replug.
+
+### Bluetooth audio
+
+Pair a Classic Bluetooth speaker or headset and choose **Use selected device** in the audio group. **Play WAV** uses that saved output and **Stop** ends the current playback. Use another stick for input or file sharing during playback.

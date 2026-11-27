@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -13,45 +13,45 @@
 // --
 
 void
-BT2_RemoveController( struct Bluetooth2Base *base, U32 unit, struct MsgPort *port )
+BT2_RemoveController ( struct Bluetooth2Base * base, U32 unit, struct MsgPort * port )
 {
-	struct BTController *controller;
-	struct BTController **slot;
-	struct BTControllerProbe *probe;
+	struct BTController *	   controller;
+	struct BTController **	   slot;
+	struct BTControllerProbe * probe;
 
-	base->Exec->ObtainSemaphore( & base->ControllerLock );
+	base->Exec->ObtainSemaphore ( &base->ControllerLock );
 
-	slot = & base->Controllers;
+	slot = &base->Controllers;
 
-	while( ( *slot ) && ( (*slot)->Unit < unit ) )
+	while ( ( *slot ) && ( ( *slot )->Unit < unit ) )
 	{
-		slot = & (*slot)->Next;
+		slot = &( *slot )->Next;
 	}
 
 	controller = *slot;
 
 	if ( ( ! controller ) || ( controller->Unit != unit ) || ( controller->Port != port ) )
 	{
-		base->Exec->ReleaseSemaphore( & base->ControllerLock );
+		base->Exec->ReleaseSemaphore ( &base->ControllerLock );
 
 		return;
 	}
 
-	*slot = controller->Next;
-	controller->Port = NULL;
+	*slot			   = controller->Next;
+	controller->Port   = NULL;
 	controller->Worker = NULL;
 
-	base->Exec->ReleaseSemaphore( & base->ControllerLock );
+	base->Exec->ReleaseSemaphore ( &base->ControllerLock );
 
 	// The worker calls removal before freeing its port. No new probes can reach it.
-	while(( probe = (PTR) base->Exec->GetMsg( port ) ))
+	while ( ( probe = (PTR)base->Exec->GetMsg ( port ) ) )
 	{
 		probe->Result = BT_HCI_NO_CONTROLLER;
 
-		base->Exec->ReplyMsg( & probe->Message );
+		base->Exec->ReplyMsg ( &probe->Message );
 	}
 
-	BT2_ReleaseController( base, controller );
+	BT2_ReleaseController ( base, controller );
 }
 
 // --

@@ -63,6 +63,8 @@ enum BTHCIResult BT2_WriteSignal( struct BTL2CAPLink *link, uint8_t code, uint8_
 void BT2_AccountCompletedPackets( struct BTL2CAPLink *link, const uint8_t *event, uint32_t length );
 int BT2_DecodeSignal( const uint8_t **cursor, uint32_t *remaining, struct BTL2CAPSignal *signal );
 
+enum BTHCIResult BT2_ConfigurePeer( struct BTL2CAPLink *link, const struct BTL2CAPSignal *signal,
+	uint16_t remoteCID, struct BTHCIError *error );
 enum BTHCIResult BT2_OpenChannel( struct BTL2CAPLink *link, uint16_t psm, uint16_t localCID,
 	uint16_t *remoteCID, struct BTHCIError *error );
 enum BTHCIResult BT2_ServiceSignal( struct BTL2CAPLink *link, const struct BTL2CAPSignal *signal,

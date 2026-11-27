@@ -1,28 +1,28 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 // --
 
-#include "bt2_all.h"
+#include "bt2_device.h"
 
 // --
 
-static PTR
-ROMExit( struct Bluetooth2Base *base )
+PTR
+ROMExit ( struct Bluetooth2Base * base )
 {
-	struct ExecIFace *exec;
+	struct ExecIFace * exec;
 
 	PTR seglist;
 
 	seglist = base->SegList;
 
 	// Keep the resident installed while its master process is running.
-	if ( ( ! seglist ) || ( base->MasterPort ) )
+	if ( ( ! seglist ) || ( base->MasterPort ) || ( base->ShareState != BT_SHARE_STOPPED ) )
 	{
 		return ( NULL );
 	}
@@ -36,9 +36,9 @@ ROMExit( struct Bluetooth2Base *base )
 
 	exec = base->Exec;
 
-	exec->Remove( & base->Device.dd_Library.lib_Node );
+	exec->Remove ( &base->Device.dd_Library.lib_Node );
 
-	exec->DeleteLibrary( & base->Device.dd_Library );
+	exec->DeleteLibrary ( &base->Device.dd_Library );
 
 	return ( seglist );
 }

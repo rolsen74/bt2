@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -13,22 +13,22 @@
 // --
 
 enum BTHCIResult
-BT2_ReadEvent( const struct BTHCITransport *transport, uint8_t *event,
-	uint32_t *length, uint32_t *reads, struct BTHCIError *error )
+BT2_ReadEvent ( const struct BTHCITransport * transport, uint8_t * event, uint32_t * length, uint32_t * reads,
+				struct BTHCIError * error )
 {
-	const uint8_t *chunk;
-	uint32_t chunkLength;
-	uint32_t total;
-	uint32_t byte;
+	const uint8_t * chunk;
+	uint32_t		chunkLength;
+	uint32_t		total;
+	uint32_t		byte;
 
 	*length = 0;
-	total = HCI_EVENT_MAX;
+	total	= HCI_EVENT_MAX;
 
-	while( *reads )
+	while ( *reads )
 	{
-		(*reads)--;
+		( *reads )--;
 
-		error->TransportError = transport->ReadEventChunk( transport->Context, & chunk, & chunkLength );
+		error->TransportError = transport->ReadEventChunk ( transport->Context, &chunk, &chunkLength );
 
 		if ( error->TransportError )
 		{
@@ -40,7 +40,7 @@ BT2_ReadEvent( const struct BTHCITransport *transport, uint8_t *event,
 			break;
 		}
 
-		for( byte = 0; byte < chunkLength; byte++ )
+		for ( byte = 0; byte < chunkLength; byte++ )
 		{
 			event[*length + byte] = chunk[byte];
 		}

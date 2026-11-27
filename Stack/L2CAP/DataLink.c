@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -18,14 +18,14 @@
 // --
 
 enum BTHCIResult
-BT2_OpenDataLinkWithPackets( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
-	const uint8_t *address, const uint8_t *key, uint16_t packetTypes, struct BTHCIError *error )
+BT2_OpenDataLinkWithPackets ( struct BTL2CAPLink * link, const struct BTACLTransport * transport, const uint8_t * address,
+							  const uint8_t * key, uint16_t packetTypes, struct BTHCIError * error )
 {
 	struct BTHCIError cleanupError;
 	struct BTPairKeys keys;
-	enum BTHCIResult result;
+	enum BTHCIResult  result;
 
-	uint8_t bufferSize[8];
+	uint8_t	 bufferSize[8];
 	uint32_t byte;
 
 	if ( ( ! address ) || ( ! transport ) || ( ! transport->ReadACLChunk ) || ( ! transport->WriteACL ) )
@@ -33,7 +33,7 @@ BT2_OpenDataLinkWithPackets( struct BTL2CAPLink *link, const struct BTACLTranspo
 		return ( BT_HCI_INVALID_ARGUMENT );
 	}
 
-	result = BT_HCICommand( & transport->HCI, HCI_READ_BUFFER_SIZE, bufferSize, sizeof( bufferSize ), error );
+	result = BT_HCICommand ( &transport->HCI, HCI_READ_BUFFER_SIZE, bufferSize, sizeof ( bufferSize ), error );
 
 	if ( result != BT_HCI_OK )
 	{
@@ -42,41 +42,41 @@ BT2_OpenDataLinkWithPackets( struct BTL2CAPLink *link, const struct BTACLTranspo
 
 	link->Transport = transport;
 
-	link->PacketSize = BT_ReadLE16( & bufferSize[1] );
+	link->PacketSize = BT_ReadLE16 ( &bufferSize[1] );
 
-	link->CreditLimit = BT_ReadLE16( & bufferSize[4] );
+	link->CreditLimit = BT_ReadLE16 ( &bufferSize[4] );
 
 	if ( ( link->PacketSize < BT_L2CAP_HEADER + BT_L2CAP_SIGNAL_HEADER ) || ( ! link->CreditLimit ) )
 	{
 		return ( BT_HCI_UNSUPPORTED );
 	}
 
-	link->Credits = link->CreditLimit;
-	link->PeerMTU = BT_L2CAP_MTU;
-	link->Cancel = NULL;
+	link->Credits			= link->CreditLimit;
+	link->PeerMTU			= BT_L2CAP_MTU;
+	link->Cancel			= NULL;
 	link->ExtraReadTimeouts = 0;
-	link->Handle = BT_CLASSIC_INVALID_HANDLE;
-	link->Peer.PINLength = 0;
+	link->Handle			= BT_CLASSIC_INVALID_HANDLE;
+	link->Peer.PINLength	= 0;
 
-	for( byte = 0; byte < sizeof( link->Peer.Address ); byte++ )
+	for ( byte = 0; byte < sizeof ( link->Peer.Address ); byte++ )
 	{
 		link->Peer.Address[byte] = address[byte];
 	}
 
-	keys.Saved = key;
+	keys.Saved	  = key;
 	keys.NewValid = 0;
-	keys.Sent = 0;
+	keys.Sent	  = 0;
 
-	result = BT2_OpenClassicLink( & transport->HCI, & link->Peer, key ? & keys : NULL, packetTypes, & link->Handle, error );
+	result = BT2_OpenClassicLink ( &transport->HCI, &link->Peer, key ? &keys : NULL, packetTypes, &link->Handle, error );
 
 	if ( ( result == BT_HCI_OK ) && ( key ) )
 	{
-		result = BT2_AuthenticateClassicLink( & transport->HCI, & link->Peer, & keys, link->Handle, error );
+		result = BT2_AuthenticateClassicLink ( &transport->HCI, &link->Peer, &keys, link->Handle, error );
 	}
 
 	if ( result != BT_HCI_OK )
 	{
-		BT2_CloseClassicLink( & transport->HCI, & link->Peer, NULL, link->Handle, & cleanupError );
+		BT2_CloseClassicLink ( &transport->HCI, &link->Peer, NULL, link->Handle, &cleanupError );
 	}
 
 	return ( result );
@@ -85,30 +85,30 @@ BT2_OpenDataLinkWithPackets( struct BTL2CAPLink *link, const struct BTACLTranspo
 // --
 
 enum BTHCIResult
-BT2_OpenDataLinkWithKey( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
-	const uint8_t *address, const uint8_t *key, struct BTHCIError *error )
+BT2_OpenDataLinkWithKey ( struct BTL2CAPLink * link, const struct BTACLTransport * transport, const uint8_t * address,
+						  const uint8_t * key, struct BTHCIError * error )
 {
-	return ( BT2_OpenDataLinkWithPackets( link, transport, address, key, BT_ACL_PACKETS_DM1, error ) );
+	return ( BT2_OpenDataLinkWithPackets ( link, transport, address, key, BT_ACL_PACKETS_DM1, error ) );
 }
 
 // --
 
 enum BTHCIResult
-BT2_OpenDataLink( struct BTL2CAPLink *link, const struct BTACLTransport *transport,
-	const uint8_t *address, struct BTHCIError *error )
+BT2_OpenDataLink ( struct BTL2CAPLink * link, const struct BTACLTransport * transport, const uint8_t * address,
+				   struct BTHCIError * error )
 {
-	return ( BT2_OpenDataLinkWithKey( link, transport, address, NULL, error ) );
+	return ( BT2_OpenDataLinkWithKey ( link, transport, address, NULL, error ) );
 }
 
 // --
 
 enum BTHCIResult
-BT2_CloseDataLink( struct BTL2CAPLink *link, enum BTHCIResult previous, struct BTHCIError *error )
+BT2_CloseDataLink ( struct BTL2CAPLink * link, enum BTHCIResult previous, struct BTHCIError * error )
 {
 	struct BTHCIError cleanupError;
-	enum BTHCIResult result;
+	enum BTHCIResult  result;
 
-	result = BT2_CloseClassicLink( & link->Transport->HCI, & link->Peer, NULL, link->Handle, & cleanupError );
+	result = BT2_CloseClassicLink ( &link->Transport->HCI, &link->Peer, NULL, link->Handle, &cleanupError );
 
 	if ( ( previous == BT_HCI_OK ) && ( result != BT_HCI_OK ) )
 	{

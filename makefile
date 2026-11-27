@@ -31,9 +31,13 @@ A2DP_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(A2DP_SOURCES)) $(OBJDIR)/ThirdPar
 $(OBJDIR)/ThirdParty/libsbc/sbc.o: CPPFLAGS += -Dmemset=BT2_SBCMemset
 HID_SOURCES := $(sort $(wildcard Stack/HID/*.c))
 HID_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(HID_SOURCES))
+PREFS_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(sort $(wildcard Stack/Prefs/*.c)))
+SHARE_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(sort $(wildcard Stack/Share/*.c)))
 MASTER_SOURCES := $(sort $(wildcard Stack/Master/*.c))
 MASTER_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(MASTER_SOURCES))
-OBJECTS := $(HCI_OBJECTS) $(BOND_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS) $(HID_OBJECTS) $(MASTER_OBJECTS) $(OBJDIR)/Stack/Device/Device.o $(OBJDIR)/Stack/Device/Fullboot.o
+DEVICE_SOURCES := $(sort $(wildcard Stack/Device/*.c))
+DEVICE_OBJECTS := $(patsubst %.c,$(OBJDIR)/%.o,$(DEVICE_SOURCES))
+OBJECTS := $(HCI_OBJECTS) $(BOND_OBJECTS) $(L2CAP_OBJECTS) $(SDP_OBJECTS) $(RFCOMM_OBJECTS) $(OBEX_OBJECTS) $(A2DP_OBJECTS) $(HID_OBJECTS) $(MASTER_OBJECTS) $(PREFS_OBJECTS) $(SHARE_OBJECTS) $(DEVICE_OBJECTS)
 
 .PHONY: all archive clean
 

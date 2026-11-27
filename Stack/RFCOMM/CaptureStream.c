@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -13,16 +13,15 @@
 // --
 
 enum BTHCIResult
-BT2_CaptureSerialFrame( struct BTRFCOMMSession *session, const struct BTRFCOMMFrame *frame,
-	struct BTHCIError *error )
+BT2_CaptureSerialFrame ( struct BTRFCOMMSession * session, const struct BTRFCOMMFrame * frame, struct BTHCIError * error )
 {
-	struct BTRFCOMMSink *sink;
-	struct BTRFCOMMCapture *capture;
+	struct BTRFCOMMSink *	 sink;
+	struct BTRFCOMMCapture * capture;
 
 	uint64_t left;
 	uint32_t count;
 	uint32_t written;
-	int32_t actual;
+	int32_t	 actual;
 
 	if ( ! session->CreditMode )
 	{
@@ -34,10 +33,10 @@ BT2_CaptureSerialFrame( struct BTRFCOMMSession *session, const struct BTRFCOMMFr
 		return ( BT_HCI_INVALID_REPLY );
 	}
 
-	sink = session->Sink;
+	sink	= session->Sink;
 	capture = sink->Capture;
-	left = capture->Expected - capture->Received;
-	count = frame->Length;
+	left	= capture->Expected - capture->Received;
+	count	= frame->Length;
 
 	if ( left < count )
 	{
@@ -46,16 +45,16 @@ BT2_CaptureSerialFrame( struct BTRFCOMMSession *session, const struct BTRFCOMMFr
 
 	written = 0;
 
-	while( written < count )
+	while ( written < count )
 	{
-		if ( BT2_LinkCancelled( session->Link ) )
+		if ( BT2_LinkCancelled ( session->Link ) )
 		{
 			return ( BT_RFCOMM_CANCELLED );
 		}
 
-		actual = sink->Write( sink->Context, frame->Data + written, count - written );
+		actual = sink->Write ( sink->Context, frame->Data + written, count - written );
 
-		if ( ( actual <= 0 ) || ( (uint32_t) actual > count - written ) )
+		if ( ( actual <= 0 ) || ( (uint32_t)actual > count - written ) )
 		{
 			return ( BT_RFCOMM_FILE_ERROR );
 		}
@@ -66,7 +65,7 @@ BT2_CaptureSerialFrame( struct BTRFCOMMSession *session, const struct BTRFCOMMFr
 
 	if ( capture->Received < capture->Expected )
 	{
-		return ( BT2_GrantRFCOMMCredit( session, error ) );
+		return ( BT2_GrantRFCOMMCredit ( session, error ) );
 	}
 
 	return ( BT_HCI_OK );

@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -13,18 +13,18 @@
 // --
 
 void
-BT2_ReleaseController( struct Bluetooth2Base *base, struct BTController *controller )
+BT2_ReleaseController ( struct Bluetooth2Base * base, struct BTController * controller )
 {
-	base->Exec->ObtainSemaphore( & base->ControllerLock );
+	base->Exec->ObtainSemaphore ( &base->ControllerLock );
 
 	controller->References--;
 
 	if ( ! controller->References )
 	{
-		base->Exec->FreeVec( controller );
+		base->Exec->FreeVec ( controller );
 	}
 
-	base->Exec->ReleaseSemaphore( & base->ControllerLock );
+	base->Exec->ReleaseSemaphore ( &base->ControllerLock );
 }
 
 // --

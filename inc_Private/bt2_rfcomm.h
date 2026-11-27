@@ -39,6 +39,7 @@ struct BTRFCOMMSession
 	uint8_t DLCI;
 	uint8_t FrameSize;
 	uint8_t CreditMode;
+	uint8_t Responder;
 	uint8_t PeerModemSeen;
 	uint8_t PeerPaused;
 	uint8_t MuxPaused;

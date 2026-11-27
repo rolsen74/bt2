@@ -1,19 +1,19 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 // --
 
-#include "bt2_all.h"
+#include "bt2_device.h"
 
 // --
 
-static U32
-_main_Release( struct Interface *self )
+U32
+_main_Release ( struct Interface * self )
 {
 	return ( --self->Data.RefCount );
 }

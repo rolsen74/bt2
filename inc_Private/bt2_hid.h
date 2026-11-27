@@ -7,7 +7,7 @@ enum BTHCIResult BT2_MonitorHID( const struct BTACLTransport *transport, struct 
 	const uint8_t *key, int (*expired)( void *context ), void *context, struct BTHCIError *error );
 
 enum BTHCIResult BT2_ConnectHIDInput( const struct BTACLTransport *transport, struct BTHIDInput *input,
-	const uint8_t *key, struct BTHCIError *error );
+	const uint8_t *key, const char **phase, struct BTHCIError *error );
 enum BTHCIResult BT2_CheckHIDConnection( struct BTL2CAPLink *link, struct BTHCIError *error );
 
 #endif

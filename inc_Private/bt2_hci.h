@@ -38,6 +38,8 @@ enum BTHCIResult BT2_RunVisible( const struct BTHCITransport *transport, const s
 
 enum BTHCIResult BT2_OpenClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
 	struct BTPairKeys *keys, uint16_t packetTypes, uint16_t *handle, struct BTHCIError *error );
+enum BTHCIResult BT2_AcceptClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
+	struct BTPairKeys *keys, uint16_t *handle, struct BTHCIError *error );
 enum BTHCIResult BT2_CloseClassicLink( const struct BTHCITransport *transport, const struct BTPairRequest *pair,
 	struct BTPairKeys *keys, uint16_t handle, struct BTHCIError *error );
 

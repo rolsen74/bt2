@@ -58,3 +58,6 @@ dkms.conf
 /bin/
 /obj/
 /bt2.lha
+
+/Programs/BluetoothPrefs/bin/
+/Programs/BluetoothPrefs/obj/

@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -26,7 +26,7 @@ Full_Boot ( PTR dummy __attribute__ ( ( unused ) ), PTR seglist __attribute__ ( 
 	{
 		if ( BT2_MasterStart ( base ) )
 		{
-			exec->DebugPrintF ( "Bluetooth : Full Boot\n" );
+			exec->DebugPrintF ( "Bluetooth : Full Boot ( " VERSTR " )\n" );
 		}
 		else
 		{

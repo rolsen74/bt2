@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -10,7 +10,7 @@
 
 #include <proto/dos.h>
 #include <dos/dostags.h>
-#include "bt2_all.h"
+#include "bt2_prefs.h"
 
 // --
 
@@ -44,6 +44,10 @@ MasterEntry ( void )
 	struct Bluetooth2Base *	  base;
 	struct MsgPort *		  port;
 	struct BT2MasterRequest * request;
+	struct MsgPort *		  completion;
+	struct Message *		  message;
+
+	U32 mask;
 
 	exec = GetExecInterface ();
 
@@ -54,22 +58,58 @@ MasterEntry ( void )
 
 	port = exec->AllocSysObjectTags ( ASOT_PORT, TAG_END );
 
-	startup->Port	  = port;
-	task->tc_UserData = NULL;
+	completion = exec->AllocSysObjectTags ( ASOT_PORT, TAG_END );
 
-	exec->ReplyMsg ( &startup->Message );
-
-	if ( ! port )
+	if ( ( ! port ) || ( ! completion ) )
 	{
+		if ( port )
+		{
+			exec->FreeSysObject ( ASOT_PORT, port );
+		}
+
+		if ( completion )
+		{
+			exec->FreeSysObject ( ASOT_PORT, completion );
+		}
+
+		exec->ReplyMsg ( &startup->Message );
+
 		return ( RETURN_FAIL );
 	}
 
+	exec->ObtainSemaphore ( &base->ControllerLock );
+
+	base->MasterPort	 = port;
+	base->CompletionPort = completion;
+
+	exec->ReleaseSemaphore ( &base->ControllerLock );
+
+	startup->Port	  = port;
+	task->tc_UserData = NULL;
+	mask			  = ( 1UL << port->mp_SigBit ) | ( 1UL << completion->mp_SigBit );
+
+	exec->ReplyMsg ( &startup->Message );
+
+	BT2_StartPolicy ( base );
+
 	for ( ;; )
 	{
-		exec->WaitPort ( port );
+		exec->Wait ( mask );
 
-		while ( ( request = (PTR)exec->GetMsg ( port ) ) )
+		for ( ;; )
 		{
+			while ( ( message = exec->GetMsg ( completion ) ) )
+			{
+				BT2_ControlComplete ( base, message );
+			}
+
+			request = (PTR)exec->GetMsg ( port );
+
+			if ( ! request )
+			{
+				break;
+			}
+
 			switch ( request->Operation )
 			{
 				case BT2_MASTER_ADD:
@@ -78,6 +118,19 @@ MasterEntry ( void )
 
 				case BT2_MASTER_REMOVE:
 					BT2_RemoveController ( base, request->Unit, request->Port );
+					break;
+
+				case BT2_MASTER_QUEUE:
+					request->Result = BT2_QueueProbe ( base, request );
+					break;
+
+				case BT2_MASTER_CONTROL:
+					if ( BT2_ForwardControl ( base, request ) )
+					{
+						continue;
+					}
+
+					BT2_ControlDispatch ( base, request->Control );
 					break;
 			}
 
@@ -143,16 +196,7 @@ BT2_MasterStart ( struct Bluetooth2Base * base )
 
 		exec->GetMsg ( reply );
 
-		if ( startup.Port )
-		{
-			exec->ObtainSemaphore ( &base->ControllerLock );
-
-			base->MasterPort = startup.Port;
-
-			exec->ReleaseSemaphore ( &base->ControllerLock );
-
-			started = TRUE;
-		}
+		started = startup.Port != NULL;
 	}
 
 	exec->FreeSysObject ( ASOT_PORT, reply );

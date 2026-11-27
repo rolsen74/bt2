@@ -1,7 +1,7 @@
 
 /*
-**      -+- Universal serial bus -+-
-** Copyright (c) 2012-2026 by Rene W. Olsen
+**          -+- Bluetooth -+-
+** Copyright (c) 2026 by Rene W. Olsen
 **
 ** SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -13,20 +13,20 @@
 // --
 
 int
-BT2_ReadAudioBytes( struct BTAudioSource *source, uint8_t *data, uint32_t length )
+BT2_ReadAudioBytes ( struct BTAudioSource * source, uint8_t * data, uint32_t length )
 {
 	int32_t bytes;
 
-	while( length )
+	while ( length )
 	{
-		if ( __atomic_load_n( & source->Request->Cancel, __ATOMIC_RELAXED ) )
+		if ( __atomic_load_n ( &source->Request->Cancel, __ATOMIC_RELAXED ) )
 		{
 			return ( 0 );
 		}
 
-		bytes = source->Read( source->File, data, length );
+		bytes = source->Read ( source->File, data, length );
 
-		if ( ( bytes <= 0 ) || ( (uint32_t) bytes > length ) )
+		if ( ( bytes <= 0 ) || ( (uint32_t)bytes > length ) )
 		{
 			return ( 0 );
 		}
@@ -41,34 +41,34 @@ BT2_ReadAudioBytes( struct BTAudioSource *source, uint8_t *data, uint32_t length
 // --
 
 static uint32_t
-ReadLE32( const uint8_t *data )
+ReadLE32 ( const uint8_t * data )
 {
-	return ( BT_ReadLE16( data ) | ( (uint32_t) BT_ReadLE16( data + 2 ) << 16 ) );
+	return ( BT_ReadLE16 ( data ) | ( (uint32_t)BT_ReadLE16 ( data + 2 ) << 16 ) );
 }
 
 // --
 
 static int
-ReadPCMExtension( struct BTAudioSource *source, uint32_t bytes )
+ReadPCMExtension ( struct BTAudioSource * source, uint32_t bytes )
 {
 	static const uint8_t pcmGUID[] = { 1, 0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71 };
-	uint8_t extension[24];
-	uint32_t index;
-	uint16_t length;
+	uint8_t				 extension[24];
+	uint32_t			 index;
+	uint16_t			 length;
 
-	if ( ( bytes < sizeof( extension ) ) || ( ! BT2_ReadAudioBytes( source, extension, sizeof( extension ) ) ) )
+	if ( ( bytes < sizeof ( extension ) ) || ( ! BT2_ReadAudioBytes ( source, extension, sizeof ( extension ) ) ) )
 	{
 		return ( 0 );
 	}
 
-	length = BT_ReadLE16( extension );
+	length = BT_ReadLE16 ( extension );
 
-	if ( ( length < 22 ) || ( length > bytes - 2 ) || ( BT_ReadLE16( extension + 2 ) != 16 ) )
+	if ( ( length < 22 ) || ( length > bytes - 2 ) || ( BT_ReadLE16 ( extension + 2 ) != 16 ) )
 	{
 		return ( 0 );
 	}
 
-	for( index = 0; index < sizeof( pcmGUID ); index++ )
+	for ( index = 0; index < sizeof ( pcmGUID ); index++ )
 	{
 		if ( extension[8 + index] != pcmGUID[index] )
 		{
@@ -82,9 +82,9 @@ ReadPCMExtension( struct BTAudioSource *source, uint32_t bytes )
 // --
 
 enum BTHCIResult
-BT2_ReadWave( struct BTAudioSource *source )
+BT2_ReadWave ( struct BTAudioSource * source )
 {
-	uint8_t header[16];
+	uint8_t	 header[16];
 	uint32_t remaining;
 	uint32_t size;
 	uint32_t skip;
@@ -92,22 +92,22 @@ BT2_ReadWave( struct BTAudioSource *source )
 	uint32_t chunks;
 	uint16_t channels;
 	uint16_t encoding;
-	int format;
+	int		 format;
 
-	format = 0;
+	format		 = 0;
 	source->Live = 0;
 
-	if ( ! BT2_ReadAudioBytes( source, header, 12 ) )
+	if ( ! BT2_ReadAudioBytes ( source, header, 12 ) )
 	{
 		return ( BT_A2DP_INVALID_WAVE );
 	}
 
-	if ( ( ReadLE32( header ) != 0x46464952 ) || ( ReadLE32( header + 8 ) != 0x45564157 ) )
+	if ( ( ReadLE32 ( header ) != 0x46464952 ) || ( ReadLE32 ( header + 8 ) != 0x45564157 ) )
 	{
 		return ( BT_A2DP_INVALID_WAVE );
 	}
 
-	remaining = ReadLE32( header + 4 );
+	remaining = ReadLE32 ( header + 4 );
 
 	if ( remaining < 4 )
 	{
@@ -116,16 +116,16 @@ BT2_ReadWave( struct BTAudioSource *source )
 
 	remaining -= 4;
 
-	for( chunks = 0; ( chunks < 256 ) && ( remaining >= 8 ); chunks++ )
+	for ( chunks = 0; ( chunks < 256 ) && ( remaining >= 8 ); chunks++ )
 	{
-		if ( ! BT2_ReadAudioBytes( source, header, 8 ) )
+		if ( ! BT2_ReadAudioBytes ( source, header, 8 ) )
 		{
 			break;
 		}
 
 		remaining -= 8;
 
-		size = ReadLE32( header + 4 );
+		size = ReadLE32 ( header + 4 );
 
 		if ( ( size > remaining ) || ( ( size == remaining ) && ( size & 1 ) ) )
 		{
@@ -136,30 +136,30 @@ BT2_ReadWave( struct BTAudioSource *source )
 
 		remaining -= skip;
 
-		switch( ReadLE32( header ) )
+		switch ( ReadLE32 ( header ) )
 		{
 			case 0x20746d66: // fmt
-				if ( ( format ) || ( size < 16 ) || ( ! BT2_ReadAudioBytes( source, header, 16 ) ) )
+				if ( ( format ) || ( size < 16 ) || ( ! BT2_ReadAudioBytes ( source, header, 16 ) ) )
 				{
 					return ( BT_A2DP_INVALID_WAVE );
 				}
 
-				rate = ReadLE32( header + 4 );
+				rate = ReadLE32 ( header + 4 );
 
-				channels = BT_ReadLE16( header + 2 );
+				channels = BT_ReadLE16 ( header + 2 );
 
-				if ( ( ( rate != 44100 ) && ( rate != 48000 ) ) ||
-					( ( channels != 1 ) && ( channels != 2 ) ) || ( BT_ReadLE16( header + 14 ) != 16 ) ||
-					( BT_ReadLE16( header + 12 ) != channels * 2 ) || ( ReadLE32( header + 8 ) != rate * channels * 2 ) )
+				if ( ( ( rate != 44100 ) && ( rate != 48000 ) ) || ( ( channels != 1 ) && ( channels != 2 ) )
+					 || ( BT_ReadLE16 ( header + 14 ) != 16 ) || ( BT_ReadLE16 ( header + 12 ) != channels * 2 )
+					 || ( ReadLE32 ( header + 8 ) != rate * channels * 2 ) )
 				{
 					return ( BT_A2DP_INVALID_WAVE );
 				}
 
-				encoding = BT_ReadLE16( header );
+				encoding = BT_ReadLE16 ( header );
 
 				if ( encoding == 0xfffe )
 				{
-					if ( ! ReadPCMExtension( source, size - 16 ) )
+					if ( ! ReadPCMExtension ( source, size - 16 ) )
 					{
 						return ( BT_A2DP_INVALID_WAVE );
 					}
@@ -171,7 +171,7 @@ BT2_ReadWave( struct BTAudioSource *source )
 					return ( BT_A2DP_INVALID_WAVE );
 				}
 
-				source->Channels = channels;
+				source->Channels	  = channels;
 				source->Request->Rate = rate;
 				skip -= 16;
 				format = 1;
@@ -189,7 +189,7 @@ BT2_ReadWave( struct BTAudioSource *source )
 				return ( BT_HCI_OK );
 		}
 
-		if ( ( skip ) && ( ! source->Skip( source->File, skip ) ) )
+		if ( ( skip ) && ( ! source->Skip ( source->File, skip ) ) )
 		{
 			break;
 		}
